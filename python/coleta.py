@@ -249,7 +249,7 @@ def copom():
 def juros():
     selic = sgs(432, "01/01/2024")
     cdi = sgs(12, "01/01/2024")          # CDI, % ao dia
-    dolar = sgs(1, "01/01/2024")         # PTAX venda
+    dolar = {**sgs(1, "01/01/2020", "31/12/2023"), **sgs(1, "01/01/2024")}   # PTAX venda (médias mensais no painel)
     linhas = [[d, r4(selic.get(d)), r4(cdi.get(d)), r4(dolar.get(d))]
               for d in sorted(set(selic) | set(cdi) | set(dolar)) if d <= HOJE.isoformat()]
     gravar("juros", ["data", "selic_meta", "cdi_dia", "dolar"], linhas)

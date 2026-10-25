@@ -81,6 +81,10 @@ h2.titulo-aba { font-size: 20px; margin: 0 0 6px; }
 .kpi .val small { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .kpi .ctx { font-size: 12.5px; color: var(--ink-3); }
 .kpi { border-top: 3px solid var(--puc-azul); }
+.kpi-dolar { margin: 0 0 10px; padding: 10px 12px; background: var(--surface-2); border-radius: 8px; }
+.kpi-dolar .val { font-size: 26px; font-weight: 650; }
+.kpi-dolar .val small { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.kpi-dolar .ctx { font-size: 12px; color: var(--ink-3); }
 .sinal-bom { color: var(--bom); font-weight: 600; } .sinal-ruim { color: var(--ruim); font-weight: 600; }
 
 /* tabelas */
@@ -258,8 +262,9 @@ footer.rodape p { margin: 0 0 6px; }
         <div class="tab-wrap" id="tab-bench"></div><p class="fonte">Fontes: ANBIMA, B3, FRED, BCB. S&amp;P 500 em reais convertido pela PTAX de venda. Elaboração própria.</p></div>
       <div class="cartao c8"><h3>Retorno acumulado em 2026</h3><p class="desc">Variação acumulada no ano (%), dia a dia.</p>
         <div class="grafico" id="g-acum"></div><p class="fonte">Fontes: B3, FRED, BCB. Elaboração própria.</p></div>
-      <div class="cartao c4"><h3>Dólar (PTAX de venda)</h3><p class="desc">R$ por US$, diário, últimos 12 meses.</p>
-        <div class="grafico" id="g-dolar"></div><p class="fonte">Fonte: BCB/SGS (série 1).</p></div>
+      <div class="cartao c4"><h3>Dólar (PTAX de venda)</h3><p class="desc">R$ por US$. Média mensal nos meses fechados; no mês corrente, média dos últimos 10 dias úteis.</p>
+        <div class="kpi-dolar" id="dolar-agora"></div>
+        <div class="grafico" id="g-dolar"></div><p class="fonte">Fonte: BCB/SGS (série 1, PTAX diária). Médias: elaboração própria.</p></div>
     </div>
   </section>
 </main>
@@ -557,6 +562,9 @@ function geral() {
   if (fsAno) li(`O Focus projeta a Selic em <b>${fmt(+fsAno.mediana, 2)}%</b> na última reunião de ${ANO} e o IPCA de ${ANO} em <b>${fmt(fIp(ANO), 2)}%</b>.`);
   if (med != null) li(`As NTN-B com vencimento a partir de ${ANO + 10} pagam em média <b>IPCA + ${fmt(med, 2)}%</b>, ${fmt(med - JURO_META, 2)} p.p. acima do juro real da meta atuarial.`);
   const imab = imaDia("IMA-B"), ibov = b.find(x => x.nome === "Ibovespa");
+  const dm = dolarMedias();
+  if (dm.atual) li(`O dólar está em <b>R$ ${fmt(dm.atual.y, 4)}</b> na média dos últimos ${dm.atual.n} dias úteis (${fmtDia(pd(dm.atual.de))} a ${fmtDia(pd(dm.atual.ate))})` +
+    (dm.fechados.length ? `, contra R$ ${fmt(dm.fechados[dm.fechados.length - 1].y, 4)} na média de ${fmtMes(dm.fechados[dm.fechados.length - 1].x)}.` : "."));
   if (imab) li(`No ano, o IMA-B rende <b>${fmt(+imab.var_ano, 2)}%</b> e o Ibovespa <b>${fmt(ibov && ibov.ano, 2)}%</b>, contra uma meta atuarial acumulada de ${fmt(META_ANO.acum, 2)}%.`);
 }
 
@@ -754,8 +762,41 @@ function mercados() {
   metaS.pontos.push({ x: pd(fimMercado), y: META_ANO.acum });
   linhas("g-acum", [acum(BOLSA["Ibovespa"] || [], COR[1], "Ibovespa"), acum(BOLSA["S&P 500 (R$)"] || [], COR[2], "S&P 500 (R$)"), acum(BOLSA["IFIX"] || [], COR[0], "IFIX"), cdiS, metaS].filter(Boolean),
     { unid: "%", diario: true });
-  const umAno = iso(new Date(hoje - 365 * 864e5));
-  linhas("g-dolar", [{ nome: "Dólar", cor: COR[0], pontos: dolarS.filter(r => r.d >= umAno).map(r => ({ x: pd(r.d), y: r.dolar })) }], { diario: true, casas: 4, casasEixo: 2 });
+  dolarAba();
+}
+
+// dólar: média mensal da PTAX nos meses fechados; no mês corrente, média dos últimos 10 dias úteis
+function dolarMedias() {
+  const mesAtual = iso(hoje).slice(0, 7);
+  const porMes = {};
+  dolarS.forEach(r => (porMes[r.d.slice(0, 7)] = porMes[r.d.slice(0, 7)] || []).push(r.dolar));
+  const fechados = Object.keys(porMes).filter(m => m < mesAtual).sort().map(m => ({ x: pd(m + "-01"), y: d3.mean(porMes[m]), n: porMes[m].length }));
+  let atual = null;
+  if (porMes[mesAtual]) {
+    const ult = dolarS.slice(-10);
+    atual = { x: pd(mesAtual + "-01"), y: d3.mean(ult, r => r.dolar), de: ult[0].d, ate: ult[ult.length - 1].d, n: ult.length };
+  }
+  return { fechados, atual };
+}
+
+function dolarAba() {
+  const { fechados, atual } = dolarMedias();
+  const ant = fechados[fechados.length - 1];
+  const box = $("dolar-agora");
+  if (atual) {
+    const v = ant ? (atual.y / ant.y - 1) * 100 : null;
+    box.innerHTML = `<div class="rot" style="font-size:12.5px;font-weight:600;color:var(--ink-2)">${MESES[atual.x.getMonth()]}/${atual.x.getFullYear()} (parcial)</div>
+      <div class="val num">R$ ${fmt(atual.y, 4)}<small> por US$</small></div>
+      <div class="ctx">Média dos últimos ${atual.n} dias úteis, de ${fmtDia(pd(atual.de))} a ${fmtDia(pd(atual.ate))}` +
+      (ant ? `; ${fmtS(v, 2)}% contra a média de ${fmtMes(ant.x)} (R$ ${fmt(ant.y, 4)})` : "") + `.</div>`;
+  } else if (ant) {
+    box.innerHTML = `<div class="val num">R$ ${fmt(ant.y, 4)}<small> por US$</small></div><div class="ctx">Média de ${fmtMes(ant.x)} (${ant.n} dias úteis).</div>`;
+  }
+  const desde = pd(`${ANO - 3}-01-01`);
+  const serieM = fechados.filter(p => p.x >= desde);
+  const series = [{ nome: "Média mensal", cor: COR[0], pontos: serieM }];
+  if (atual && ant) series.push({ nome: "Mês corrente: últimos 10 dias úteis", cor: COR[1], tracejado: true, pontos: [{ x: ant.x, y: ant.y }, { x: atual.x, y: atual.y }] });
+  linhas("g-dolar", series, { casas: 4, casasEixo: 2, unid: "", fmtX: d => String(d.getFullYear()) });
 }
 
 /* ---------- abas, tema e desenho ---------- */
