@@ -1,0 +1,4 @@
+offline/
+__pycache__/
+.DS_Store
+falhas.txt

@@ -1,0 +1,53 @@
+# Atualiza o painel todo dia útil: baixa os dados de novo (BCB, B3, ANBIMA, FRED), gera o index.html
+# e publica no GitHub Pages. Os CSV de dados/ também são publicados, porque a ANBIMA só mostra os
+# últimos 5 dias úteis e o histórico de títulos, ETTJ e IMA é acumulado aqui. Também roda à mão:
+# aba Actions → "Atualiza o painel" → "Run workflow".
+name: Atualiza o painel
+
+on:
+  schedule:            # vários horários porque o GitHub costuma atrasar os agendamentos
+    - cron: "30 11 * * 1-5"   # 8h30 em Brasília (Focus sai às segundas por volta das 8h30)
+    - cron: "10 14 * * 1-5"   # 11h10
+    - cron: "40 21 * * 1-5"   # 18h40, depois da ANBIMA e do fechamento da B3
+    - cron: "40 23 * * 1-5"   # 20h40
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: atualizar-painel
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: America/Sao_Paulo
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Baixa os dados
+        run: python3 python/coleta.py
+
+      - name: Gera a página
+        run: python3 python/gerar_site.py
+
+      - name: Publica
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html dados
+          if git diff --cached --quiet; then
+            echo "Nada mudou."
+          else
+            git commit -m "Atualiza o painel ($(date +%d/%m/%Y\ %Hh%M))"
+            git pull --rebase -X theirs origin main
+            git push
+          fi
+
+      - name: Avisa se alguma fonte falhou (o resto já foi publicado)
+        run: |
+          if [ -s falhas.txt ]; then
+            echo "Fontes que não responderam (ficou o dado anterior):"; cat falhas.txt
+            exit 1
+          fi

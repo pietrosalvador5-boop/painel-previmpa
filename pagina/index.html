@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Conjuntura PREVIMPA</title>
+<meta name="description" content="Painel de conjuntura econômica e de mercado para o Comitê de Investimentos da PREVIMPA. Trabalho acadêmico, PUCRS.">
+<style>
+:root {
+  color-scheme: light;
+  /* identidade PUCRS (portal pucrs.br): azul-marinho, azul, azul-claro */
+  --puc-marinho: #002a3f; --puc-azul: #005187; --puc-claro: #83d0f5; --puc-ciano: #0bbbef;
+  --bg: #f4f7fa; --surface: #ffffff; --surface-2: #eef3f7; --line: #d9e2ea; --grid: #e6edf3;
+  --ink: #10202c; --ink-2: #4a5b68; --ink-3: #6f7f8b; --axis: #93a3af; --ref: #6f7f8b;
+  --s1: #1468a8; --s2: #d81f55; --s3: #0092c7; --s4: #c98500;
+  --bom: #1f7a4d; --ruim: #b4372f;
+  --sombra: 0 1px 2px rgba(0, 42, 63, .06), 0 2px 8px rgba(0, 42, 63, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #0a131b; --surface: #0f1a24; --surface-2: #15232f; --line: #22333f; --grid: #1c2b37;
+    --ink: #e7eef3; --ink-2: #a9b8c3; --ink-3: #8696a2; --axis: #5d6f7c; --ref: #8696a2;
+    --s1: #4a9be0; --s2: #ee4f7d; --s3: #1199c8; --s4: #b8850c;
+    --bom: #5cc28f; --ruim: #f07b6f;
+    --sombra: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a131b; --surface: #0f1a24; --surface-2: #15232f; --line: #22333f; --grid: #1c2b37;
+  --ink: #e7eef3; --ink-2: #a9b8c3; --ink-3: #8696a2; --axis: #5d6f7c; --ref: #8696a2;
+  --s1: #4a9be0; --s2: #ee4f7d; --s3: #1199c8; --s4: #b8850c;
+  --bom: #5cc28f; --ruim: #f07b6f;
+  --sombra: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* cabeçalho institucional */
+header.topo { background: var(--puc-marinho); color: #fff; border-bottom: 4px solid var(--puc-ciano); }
+.topo-in { max-width: 1280px; margin: 0 auto; padding: 18px 16px 16px; display: flex; gap: 18px; align-items: center; }
+.topo img { width: 54px; height: auto; flex: none; }
+.topo .inst { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--puc-claro); font-weight: 600; }
+.topo h1 { margin: 2px 0 4px; font-size: 22px; line-height: 1.2; font-weight: 650; }
+.topo .sub { font-size: 13px; color: #c9dcea; }
+.topo .atual { margin-left: auto; text-align: right; font-size: 12px; color: #c9dcea; flex: none; }
+.topo .atual b { display: block; color: #fff; font-size: 14px; }
+@media (max-width: 760px) { .topo-in { flex-wrap: wrap; } .topo .atual { margin-left: 0; text-align: left; } .topo h1 { font-size: 19px; } }
+
+/* abas */
+nav.abas { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+.abas-in { max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.abas button { appearance: none; border: 0; background: none; color: var(--ink-2); font: inherit; font-weight: 600;
+  padding: 13px 12px 11px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+.abas button:hover { color: var(--ink); }
+.abas button[aria-selected="true"] { color: var(--puc-azul); border-bottom-color: var(--puc-azul); }
+:root[data-theme="dark"] .abas button[aria-selected="true"] { color: var(--puc-claro); border-bottom-color: var(--puc-claro); }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .abas button[aria-selected="true"] { color: var(--puc-claro); border-bottom-color: var(--puc-claro); } }
+
+main { max-width: 1280px; margin: 0 auto; padding: 22px 16px 40px; }
+section.aba { display: none; } section.aba.ativa { display: block; }
+.intro { color: var(--ink-2); max-width: 900px; margin: 0 0 18px; }
+h2.titulo-aba { font-size: 20px; margin: 0 0 6px; }
+
+.grade { display: grid; gap: 16px; grid-template-columns: repeat(12, 1fr); }
+.c12 { grid-column: span 12; } .c8 { grid-column: span 8; } .c6 { grid-column: span 6; } .c4 { grid-column: span 4; } .c3 { grid-column: span 3; }
+@media (max-width: 1000px) { .c8, .c6, .c4 { grid-column: span 12; } .c3 { grid-column: span 6; } }
+@media (max-width: 560px) { .c3 { grid-column: span 12; } }
+
+.cartao { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 16px 12px; box-shadow: var(--sombra); min-width: 0; }
+.cartao h3 { margin: 0 0 2px; font-size: 15px; }
+.cartao .desc { margin: 0 0 10px; font-size: 12.5px; color: var(--ink-3); }
+.fonte { margin: 8px 0 0; font-size: 11.5px; color: var(--ink-3); }
+
+/* indicadores-chave */
+.kpi .rot { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.kpi .val { font-size: 28px; font-weight: 650; letter-spacing: -.01em; margin: 4px 0 2px; }
+.kpi .val small { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.kpi .ctx { font-size: 12.5px; color: var(--ink-3); }
+.kpi { border-top: 3px solid var(--puc-azul); }
+.sinal-bom { color: var(--bom); font-weight: 600; } .sinal-ruim { color: var(--ruim); font-weight: 600; }
+
+/* tabelas */
+.tab-wrap { overflow-x: auto; }
+table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.t th { text-align: right; font-weight: 600; color: var(--ink-2); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 12px; }
+table.t td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+table.t th:first-child, table.t td:first-child { text-align: left; }
+table.t tr.grupo td { font-weight: 650; color: var(--puc-azul); background: var(--surface-2); }
+table.t tr.destaque td { font-weight: 650; }
+.seta-alta, .seta-baixa { color: var(--ink-3); font-size: 10px; }
+
+/* gráficos */
+.grafico { position: relative; width: 100%; }
+.grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grafico .eixo text { fill: var(--ink-3); font-size: 11px; }
+.grafico .eixo path, .grafico .eixo line { stroke: var(--axis); }
+.grafico .grade-y line { stroke: var(--grid); }
+.grafico .grade-y path { display: none; }
+.legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 6px; font-size: 12px; color: var(--ink-2); }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.legenda i.tracejado { height: 0; border-top: 2px dashed var(--ref); background: none; }
+.legenda i.faixa { height: 10px; background: var(--s1); opacity: .14; }
+.dica { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0, 42, 63, .14); min-width: 140px; z-index: 3; display: none; }
+.dica .d-t { font-weight: 650; margin-bottom: 4px; }
+.dica .d-l { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); }
+.dica .d-l b { color: var(--ink); font-weight: 600; }
+.dica .d-l i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.vazio { padding: 28px 8px; text-align: center; color: var(--ink-3); font-size: 13px; }
+
+.seletor { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 0 0 8px; }
+.seletor button { appearance: none; border: 0; background: var(--surface); color: var(--ink-2); font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; cursor: pointer; }
+.seletor button + button { border-left: 1px solid var(--line); }
+.seletor button[aria-pressed="true"] { background: var(--puc-azul); color: #fff; }
+
+.leitura { margin: 0; padding-left: 18px; color: var(--ink-2); }
+.leitura li { margin: 0 0 6px; }
+.leitura b { color: var(--ink); }
+
+footer.rodape { max-width: 1280px; margin: 0 auto; padding: 0 16px 36px; font-size: 12px; color: var(--ink-3); }
+footer.rodape p { margin: 0 0 6px; }
+.tema { margin-top: 8px; appearance: none; border: 1px solid rgba(131, 208, 245, .5); background: transparent;
+  color: #c9dcea; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.tema:hover { color: #fff; border-color: var(--puc-claro); }
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="topo-in">
+    <img src="{{BRASAO}}" alt="Brasão da PUCRS">
+    <div>
+      <div class="inst">PUCRS · Escola de Negócios · Alocação de Ativos Financeiros</div>
+      <h1>Painel de Conjuntura para o Comitê de Investimentos da PREVIMPA</h1>
+      <div class="sub">Prof. Bruno Breyer Caldas · Arthur Muller, Pietro Weirich Salvador e Rafael Toni dos Santos</div>
+    </div>
+    <div class="atual">Atualizado em<b id="gerado">{{GERADO}}</b><span id="ultimo-dado"></span><br><button class="tema" id="tema" type="button">Tema</button></div>
+  </div>
+</header>
+<nav class="abas" aria-label="Seções do painel">
+  <div class="abas-in" role="tablist">
+    <button role="tab" data-aba="geral" aria-selected="true">Visão geral</button>
+    <button role="tab" data-aba="inflacao" aria-selected="false">Inflação</button>
+    <button role="tab" data-aba="focus" aria-selected="false">Expectativas (Focus)</button>
+    <button role="tab" data-aba="copom" aria-selected="false">Juros e Copom</button>
+    <button role="tab" data-aba="ntnb" aria-selected="false">NTN-B e meta atuarial</button>
+    <button role="tab" data-aba="mercados" aria-selected="false">Mercados e benchmarks</button>
+  </div>
+</nav>
+
+<main>
+  <!-- VISÃO GERAL -->
+  <section class="aba ativa" id="aba-geral">
+    <h2 class="titulo-aba">Visão geral</h2>
+    <p class="intro">Resumo dos indicadores que o Comitê de Investimentos acompanha antes de cada reunião. A meta atuarial de 2026,
+      definida na Política de Investimentos, é <b>IPCA + 5,30% ao ano</b>: todos os retornos e taxas reais do painel são lidos contra ela.</p>
+    <div class="grade" id="kpis"></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao c6"><h3>Leitura do momento</h3><p class="desc">Frases geradas a partir dos dados mais recentes do painel.</p><ul class="leitura" id="leitura"></ul></div>
+      <div class="cartao c6"><h3>Retorno no ano: benchmarks contra a meta atuarial</h3>
+        <p class="desc">Variação acumulada em 2026 (%). A linha tracejada é a meta atuarial acumulada até a mesma data.</p>
+        <div class="grafico" id="g-geral-bench"></div>
+        <p class="fonte">Fontes: ANBIMA (IMA), B3 (Ibovespa, IFIX), FRED (S&amp;P 500), BCB (CDI, PTAX, IPCA, Focus). Elaboração própria.</p></div>
+    </div>
+  </section>
+
+  <!-- INFLAÇÃO -->
+  <section class="aba" id="aba-inflacao">
+    <h2 class="titulo-aba">Inflação</h2>
+    <p class="intro">O IPCA é o indexador da meta atuarial e das NTN-B, que formam a maior parte da carteira. Os núcleos mostram a tendência
+      sem os itens mais voláteis, e os IGPs (IGP-M e IPA) captam a pressão de preços no atacado, que chega ao consumidor com defasagem.</p>
+    <div class="grade">
+      <div class="cartao c12"><h3>IPCA acumulado em 12 meses e meta de inflação</h3>
+        <p class="desc">% em 12 meses. A faixa é o intervalo de tolerância da meta do CMN.</p>
+        <div class="grafico" id="g-ipca"></div><p class="fonte">Fonte: IBGE, via BCB/SGS (série 433); CMN.</p></div>
+
+      <div class="cartao c6"><h3>Núcleos do IPCA</h3>
+        <p class="desc">% em 12 meses. Média dos cinco núcleos acompanhados pelo Banco Central (EX0, EX3, MS, DP e P55) e serviços.</p>
+        <div class="grafico" id="g-nucleos"></div><p class="fonte">Fonte: BCB/SGS (11427, 27839, 4466, 16122, 28750, 10844).</p></div>
+      <div class="cartao c6"><h3>IGP-M, IPA-M e IPCA</h3>
+        <p class="desc">% em 12 meses. O IPA-M pesa 60% no IGP-M.</p>
+        <div class="grafico" id="g-igp"></div><p class="fonte">Fonte: FGV IBRE e IBGE, via BCB/SGS (189, 7450, 433).</p></div>
+      <div class="cartao c12"><h3>Último mês divulgado</h3><p class="desc" id="desc-tab-precos"></p>
+        <div class="grade" style="gap:20px"><div class="c4 tab-wrap" id="tab-precos-0"></div><div class="c4 tab-wrap" id="tab-precos-1"></div><div class="c4 tab-wrap" id="tab-precos-2"></div></div>
+        <p class="fonte">Fontes: IBGE, FGV IBRE e Fipe, via BCB/SGS.</p></div>
+    </div>
+  </section>
+
+  <!-- FOCUS -->
+  <section class="aba" id="aba-focus">
+    <h2 class="titulo-aba">Expectativas de mercado (Boletim Focus)</h2>
+    <p class="intro">A mesma tabela que a Política de Investimentos usa no cenário macroeconômico (seção 8.1), atualizada toda semana.
+      A coluna "4 semanas" mostra a mediana de um mês antes, para indicar a direção das revisões.</p>
+    <div class="grade">
+      <div class="cartao c12"><h3>Projeções anuais (mediana)</h3><p class="desc" id="desc-focus"></p>
+        <div class="tab-wrap" id="tab-focus"></div><p class="fonte">Fonte: BCB, Sistema de Expectativas de Mercado (Focus).</p></div>
+      <div class="cartao c6"><h3>Evolução da expectativa de IPCA</h3><p class="desc">Mediana semanal (%), últimas 26 semanas.</p>
+        <div class="grafico" id="g-focus-ipca"></div><p class="fonte">Fonte: BCB/Focus.</p></div>
+      <div class="cartao c6"><h3>Evolução da expectativa de Selic no fim do ano</h3><p class="desc">Mediana semanal (% a.a.), últimas 26 semanas.</p>
+        <div class="grafico" id="g-focus-selic"></div><p class="fonte">Fonte: BCB/Focus.</p></div>
+      <div class="cartao c12"><h3>Inflação esperada para os próximos 12 meses</h3><p class="desc">Mediana suavizada (%), últimos dois anos.</p>
+        <div class="grafico" id="g-focus-12m"></div><p class="fonte">Fonte: BCB/Focus.</p></div>
+    </div>
+  </section>
+
+  <!-- COPOM -->
+  <section class="aba" id="aba-copom">
+    <h2 class="titulo-aba">Juros e Copom</h2>
+    <p class="intro">O que o mercado espera para a Selic, por três fontes: as opções de Copom negociadas na B3 (probabilidade de cada decisão),
+      o Focus (mediana dos analistas por reunião) e a curva de juros prefixada da ANBIMA (preço dos títulos).</p>
+    <div class="grade">
+      <div class="cartao c12"><h3>Opções de Copom: probabilidade de cada decisão</h3><p class="desc" id="desc-copom"></p>
+        <div class="grafico" id="g-copom"></div><p class="fonte">Fonte: B3, preços de referência das opções de Copom. Cenários com menos de 1% de probabilidade aparecem agrupados.</p></div>
+      <div class="cartao c6"><h3>Próxima reunião: evolução das probabilidades</h3><p class="desc" id="desc-copom-hist"></p>
+        <div class="grafico" id="g-copom-hist"></div><p class="fonte">Fonte: B3.</p></div>
+      <div class="cartao c6"><h3>Selic esperada por reunião (Focus)</h3><p class="desc">Mediana (% a.a.) na pesquisa mais recente e quatro semanas antes.</p>
+        <div class="grafico" id="g-focus-reuniao"></div><p class="fonte">Fonte: BCB/Focus.</p></div>
+      <div class="cartao c12"><h3>Curva de juros prefixada</h3><p class="desc">Estrutura a termo (% a.a.) por prazo em anos. Compara o dia mais recente com o mais antigo do histórico guardado.</p>
+        <div class="seletor" id="sel-curva"></div>
+        <div class="grafico" id="g-curva-pre"></div><p class="fonte">Fonte: ANBIMA, ETTJ (estimada a partir de LTN e NTN-F).</p></div>
+    </div>
+  </section>
+
+  <!-- NTN-B -->
+  <section class="aba" id="aba-ntnb">
+    <h2 class="titulo-aba">NTN-B e meta atuarial</h2>
+    <p class="intro">Uma NTN-B comprada e levada ao vencimento rende IPCA + a taxa da compra. Quando a taxa está acima de 5,30%, a compra
+      "trava" um retorno acima da meta atuarial: é a lógica dos títulos marcados na curva, que eram 60,5% da carteira em agosto de 2026.
+      A diferença entre a taxa e a meta é o espaço que o Comitê tem para alongar ou reforçar essa posição.</p>
+    <div class="grade" id="kpis-ntnb"></div>
+    <div class="grade" style="margin-top:16px">
+      <div class="cartao c8"><h3>Taxa das NTN-B por vencimento contra a meta atuarial</h3>
+        <p class="desc">Taxa indicativa ANBIMA (% a.a. acima do IPCA). A linha tracejada é o juro real da meta (5,30%).</p>
+        <div class="grafico" id="g-ntnb-venc"></div><p class="fonte">Fonte: ANBIMA, taxas indicativas de títulos públicos; Política de Investimentos PREVIMPA 2026.</p></div>
+      <div class="cartao c4"><h3>Taxa e folga sobre a meta</h3><p class="desc" id="desc-tab-ntnb"></p>
+        <div class="tab-wrap" id="tab-ntnb"></div><p class="fonte">Fonte: ANBIMA. Folga = taxa − 5,30 p.p.</p></div>
+      <div class="cartao c6"><h3>Taxas das NTN-B ao longo do tempo</h3><p class="desc" id="desc-ntnb-hist"></p>
+        <div class="grafico" id="g-ntnb-hist"></div><p class="fonte" id="fonte-ntnb-hist">Fonte: ANBIMA.</p></div>
+      <div class="cartao c6"><h3>Curva real e inflação implícita</h3><p class="desc">ETTJ IPCA (juro real) e inflação implícita (pré contra real), % a.a., dia mais recente.</p>
+        <div class="grafico" id="g-curva-real"></div><p class="fonte">Fonte: ANBIMA, ETTJ.</p></div>
+      <div class="cartao c12"><h3>Meta atuarial de 2026 mês a mês</h3>
+        <p class="desc">Meta mensal = (1 + IPCA do mês) × (1,053)^(1/12) − 1. Nos meses sem IPCA divulgado entra a mediana do Focus.</p>
+        <div class="tab-wrap" id="tab-meta"></div><p class="fonte">Fontes: IBGE (IPCA), BCB/Focus; Política de Investimentos PREVIMPA 2026.</p></div>
+    </div>
+  </section>
+
+  <!-- MERCADOS -->
+  <section class="aba" id="aba-mercados">
+    <h2 class="titulo-aba">Mercados e benchmarks</h2>
+    <p class="intro">Os índices de referência da Política de Investimentos (IMA-B para renda fixa, Ibovespa para renda variável, S&amp;P 500 para exterior,
+      CDI para caixa) e os demais benchmarks do relatório mensal da carteira, comparados com a meta atuarial.</p>
+    <div class="grade">
+      <div class="cartao c12"><h3>Retorno dos benchmarks</h3><p class="desc" id="desc-tab-bench"></p>
+        <div class="tab-wrap" id="tab-bench"></div><p class="fonte">Fontes: ANBIMA, B3, FRED, BCB. S&amp;P 500 em reais convertido pela PTAX de venda. Elaboração própria.</p></div>
+      <div class="cartao c8"><h3>Retorno acumulado em 2026</h3><p class="desc">Variação acumulada no ano (%), dia a dia.</p>
+        <div class="grafico" id="g-acum"></div><p class="fonte">Fontes: B3, FRED, BCB. Elaboração própria.</p></div>
+      <div class="cartao c4"><h3>Dólar (PTAX de venda)</h3><p class="desc">R$ por US$, diário, últimos 12 meses.</p>
+        <div class="grafico" id="g-dolar"></div><p class="fonte">Fonte: BCB/SGS (série 1).</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  <p>Trabalho acadêmico da disciplina Alocação de Ativos Financeiros (PUCRS), feito para a PREVIMPA no âmbito da extensão. Não é publicação oficial
+    da PREVIMPA nem recomendação de investimento.</p>
+  <p>Dados atualizados todo dia útil por coleta automática nas fontes oficiais. Taxas e índices da ANBIMA são publicados com até cinco dias úteis
+    de histórico; o painel guarda os dias anteriores a partir do início da coleta.</p>
+</footer>
+<script>{{D3}}</script>
+<script>window.__DADOS__ = {{DADOS}};</script>
+<script>
+(function () {
+"use strict";
+const D = window.__DADOS__;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const COR = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
+
+/* ---------- utilidades ---------- */
+const nf = (c = 1) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
+const fmt = (v, c = 1) => (v == null || isNaN(v)) ? "–" : nf(c).format(v);
+const fmtS = (v, c = 1) => (v == null || isNaN(v)) ? "–" : (v > 0 ? "+" : "") + nf(c).format(v);
+const pd = s => new Date(s + "T12:00:00");
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const fmtMes = d => `${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+const fmtDia = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+const iso = d => d.toISOString().slice(0, 10);
+const num = v => (v === "" || v == null) ? null : +v;
+const rows = id => (D[id] && D[id].rows) || [];
+const el = (tag, attrs = {}, html) => { const e = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if (html != null) e.innerHTML = html; return e; };
+const $ = id => document.getElementById(id);
+
+function serie(id, filtro, campoX, campoY) {
+  return rows(id).filter(filtro).map(r => ({ x: pd(r[campoX]), y: num(r[campoY]) })).filter(p => p.y != null).sort((a, b) => a.x - b.x);
+}
+
+/* ---------- gráfico de linhas com crosshair ---------- */
+function linhas(alvo, series, op = {}) {
+  const box = $(alvo); box.innerHTML = "";
+  series = series.filter(s => s.pontos.length);
+  if (!series.length) { box.innerHTML = '<div class="vazio">Sem dados ainda.</div>'; return; }
+  const leg = el("div", { class: "legenda" });
+  if (series.length > 1 || op.refs || op.faixa) {
+    series.forEach(s => leg.append(el("span", {}, `<i style="background:${s.cor}"></i>${s.nome}`)));
+    (op.refs || []).forEach(r => leg.append(el("span", {}, `<i class="tracejado"></i>${r.nome}`)));
+    if (op.faixa) leg.append(el("span", {}, `<i class="faixa"></i>${op.faixa.nome}`));
+    box.append(leg);
+  }
+  const W = Math.max(box.clientWidth, 280), H = op.altura || 260;
+  const m = { t: 10, r: op.margemDir || 16, b: 26, l: 40 };
+  const todos = series.flatMap(s => s.pontos);
+  const xs = op.xNum ? d3.scaleLinear() : d3.scaleTime();
+  xs.domain(op.xDominio || d3.extent(todos, p => p.x)).range([m.l, W - m.r]);
+  let ys = todos.map(p => p.y).concat((op.refs || []).map(r => r.y));
+  if (op.faixa) ys = ys.concat(op.faixa.pontos.flatMap(p => [p.y0, p.y1]));
+  let [y0, y1] = d3.extent(ys); const pad = (y1 - y0) * 0.08 || 1;
+  if (op.zero && y0 > 0) y0 = 0;
+  const y = d3.scaleLinear().domain([op.zero && y0 >= 0 ? 0 : y0 - pad, y1 + pad]).nice().range([H - m.b, m.t]);
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", op.rotulo || "");
+  svg.append("g").attr("class", "grade-y").attr("transform", `translate(${m.l},0)`)
+    .call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(""));
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(${m.l},0)`)
+    .call(d3.axisLeft(y).ticks(5).tickFormat(v => fmt(v, op.casasEixo ?? (Math.abs(y.domain()[1] - y.domain()[0]) < 3 ? 1 : 0))).tickSize(0).tickPadding(6))
+    .call(g => g.select(".domain").remove());
+  const eixoX = op.xNum ? d3.axisBottom(xs).ticks(Math.min(8, W / 80)).tickFormat(op.fmtX || (v => v))
+    : d3.axisBottom(xs).ticks(Math.min(8, W / 90)).tickFormat(op.fmtX || (d => (op.diario ? `${String(d.getDate()).padStart(2, "0")}/${MESES[d.getMonth()]}` : fmtMes(d))));
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - m.b})`).call(eixoX.tickSizeOuter(0));
+  if (y.domain()[0] < 0 && y.domain()[1] > 0)
+    svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0)).attr("stroke", "var(--axis)");
+  if (op.faixa) {
+    svg.append("path").datum(op.faixa.pontos).attr("fill", "var(--s1)").attr("opacity", .12)
+      .attr("d", d3.area().curve(d3.curveStepAfter).x(p => xs(p.x)).y0(p => y(p.y0)).y1(p => y(p.y1)));
+  }
+  (op.refs || []).forEach(r => {
+    svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(r.y)).attr("y2", y(r.y))
+      .attr("stroke", "var(--ref)").attr("stroke-width", 1.5).attr("stroke-dasharray", "5 4");
+    svg.append("text").attr("x", W - m.r).attr("y", y(r.y) - 5).attr("text-anchor", "end").attr("fill", "var(--ink-2)")
+      .attr("font-size", 11).text(r.rotulo || r.nome);
+  });
+  series.forEach(s => {
+    const p = svg.append("path").datum(s.pontos).attr("fill", "none").attr("stroke", s.cor).attr("stroke-width", 2)
+      .attr("stroke-linejoin", "round").attr("stroke-linecap", "round")
+      .attr("d", d3.line().defined(q => q.y != null).curve(op.degrau ? d3.curveStepAfter : d3.curveLinear).x(q => xs(q.x)).y(q => y(q.y)));
+    if (s.tracejado) p.attr("stroke-dasharray", "6 4");
+    if (op.marcadores) svg.append("g").selectAll("circle").data(s.pontos).join("circle")
+      .attr("cx", q => xs(q.x)).attr("cy", q => y(q.y)).attr("r", 4).attr("fill", s.cor).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+  });
+  // rótulo direto do último ponto
+  if (op.rotuloFinal !== false) series.forEach(s => {
+    const u = s.pontos[s.pontos.length - 1];
+    svg.append("circle").attr("cx", xs(u.x)).attr("cy", y(u.y)).attr("r", 4).attr("fill", s.cor).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+  });
+  // crosshair + dica
+  const dica = el("div", { class: "dica" }); box.append(dica);
+  const guia = svg.append("line").attr("y1", m.t).attr("y2", H - m.b).attr("stroke", "var(--axis)").attr("stroke-width", 1).style("display", "none");
+  const pts = svg.append("g").style("display", "none");
+  const xsUnicos = Array.from(new Set(todos.map(p => +p.x))).sort((a, b) => a - b);
+  svg.append("rect").attr("x", m.l).attr("y", m.t).attr("width", W - m.l - m.r).attr("height", H - m.t - m.b).attr("fill", "transparent")
+    .on("pointermove", ev => {
+      const [mx] = d3.pointer(ev); const alvoX = +xs.invert(mx);
+      const i = d3.bisectCenter(xsUnicos, alvoX); const xv = xsUnicos[i];
+      guia.style("display", null).attr("x1", xs(xv)).attr("x2", xs(xv));
+      pts.style("display", null).selectAll("*").remove();
+      const tit = op.xNum ? (op.fmtDicaX || (v => v))(xv) : (op.diario ? fmtDia(new Date(xv)) : fmtMes(new Date(xv)));
+      let html = `<div class="d-t">${tit}</div>`;
+      series.forEach(s => {
+        const q = s.pontos.find(p => +p.x === xv); if (!q) return;
+        pts.append("circle").attr("cx", xs(q.x)).attr("cy", y(q.y)).attr("r", 4).attr("fill", s.cor).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+        html += `<div class="d-l"><span><i style="background:${s.cor}"></i>${s.nome}</span><b class="num">${fmt(q.y, op.casas ?? 2)}${op.unid || ""}</b></div>`;
+      });
+      if (op.faixa) { const f = op.faixa.pontos.filter(p => +p.x <= xv).pop(); if (f) html += `<div class="d-l"><span>${op.faixa.nome}</span><b class="num">${fmt(f.y0, 1)} a ${fmt(f.y1, 1)}</b></div>`; }
+      dica.innerHTML = html; dica.style.display = "block";
+      const bx = box.getBoundingClientRect(), px = xs(xv) / W * bx.width;
+      dica.style.left = Math.min(px + 12, bx.width - dica.offsetWidth - 4) + "px";
+      dica.style.top = (leg.parentNode ? leg.offsetHeight : 0) + 8 + "px";
+    })
+    .on("pointerleave", () => { guia.style("display", "none"); pts.style("display", "none"); dica.style.display = "none"; });
+}
+
+/* ---------- barras horizontais com referência ---------- */
+function barrasH(alvo, itens, op = {}) {
+  const box = $(alvo); box.innerHTML = "";
+  if (!itens.length) { box.innerHTML = '<div class="vazio">Sem dados ainda.</div>'; return; }
+  if (op.refs) { const leg = el("div", { class: "legenda" }); op.refs.forEach(r => leg.append(el("span", {}, `<i class="tracejado"></i>${r.nome}`))); box.append(leg); }
+  const W = Math.max(box.clientWidth, 280), lin = 26, m = { t: 6, r: 52, b: 22, l: op.margemEsq || 130 };
+  const H = m.t + m.b + itens.length * lin;
+  const vals = itens.map(d => d.v).concat((op.refs || []).map(r => r.y), [0]);
+  const x = d3.scaleLinear().domain(d3.extent(vals)).nice().range([m.l, W - m.r]);
+  const yb = d3.scaleBand().domain(itens.map(d => d.nome)).range([m.t, H - m.b]).paddingInner(.3);
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  svg.append("g").attr("class", "grade-y").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(5).tickSize(-(H - m.t - m.b)).tickFormat(""));
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(v => fmt(v, 0)).tickSize(0).tickPadding(6)).call(g => g.select(".domain").remove());
+  const dica = el("div", { class: "dica" }); box.append(dica);
+  const g = svg.append("g").selectAll("g").data(itens).join("g");
+  g.append("text").attr("x", m.l - 8).attr("y", d => yb(d.nome) + yb.bandwidth() / 2).attr("dy", "0.35em").attr("text-anchor", "end")
+    .attr("fill", "var(--ink-2)").attr("font-size", 12).text(d => d.nome);
+  g.append("path").attr("fill", d => d.cor || "var(--s1)").attr("d", d => {
+    const x0 = x(0), x1 = x(d.v), yy = yb(d.nome), h = yb.bandwidth(), r = Math.min(4, Math.abs(x1 - x0));
+    return x1 >= x0 ? `M${x0},${yy}H${x1 - r}Q${x1},${yy} ${x1},${yy + r}V${yy + h - r}Q${x1},${yy + h} ${x1 - r},${yy + h}H${x0}Z`
+                    : `M${x0},${yy}H${x1 + r}Q${x1},${yy} ${x1},${yy + r}V${yy + h - r}Q${x1},${yy + h} ${x1 + r},${yy + h}H${x0}Z`;
+  });
+  g.append("text").attr("class", "num").attr("x", d => d.v >= 0 ? x(d.v) + 6 : x(d.v) - 6).attr("text-anchor", d => d.v >= 0 ? "start" : "end")
+    .attr("y", d => yb(d.nome) + yb.bandwidth() / 2).attr("dy", "0.35em").attr("fill", "var(--ink)").attr("font-size", 12).text(d => fmt(d.v, op.casas ?? 1));
+  (op.refs || []).forEach(r => svg.append("line").attr("x1", x(r.y)).attr("x2", x(r.y)).attr("y1", m.t - 2).attr("y2", H - m.b)
+    .attr("stroke", "var(--ref)").attr("stroke-width", 1.5).attr("stroke-dasharray", "5 4"));
+  g.append("rect").attr("x", 0).attr("width", W).attr("y", d => yb(d.nome) - 4).attr("height", yb.bandwidth() + 8).attr("fill", "transparent")
+    .on("pointermove", (ev, d) => {
+      dica.innerHTML = `<div class="d-t">${d.nome}</div>` + (d.dica || `<div class="d-l"><span>Valor</span><b class="num">${fmt(d.v, 2)}${op.unid || ""}</b></div>`);
+      dica.style.display = "block"; const bx = box.getBoundingClientRect(); const [mx, my] = d3.pointer(ev, box);
+      dica.style.left = Math.min(mx + 12, bx.width - dica.offsetWidth - 4) + "px"; dica.style.top = (my + 14) + "px";
+    }).on("pointerleave", () => dica.style.display = "none");
+}
+
+/* ---------- tabelas ---------- */
+function tabela(alvo, cab, linhasT) {
+  const t = el("table", { class: "t num" });
+  t.append(el("thead", {}, "<tr>" + cab.map(c => `<th>${c}</th>`).join("") + "</tr>"));
+  const tb = el("tbody");
+  linhasT.forEach(l => {
+    if (l.grupo) { tb.append(el("tr", { class: "grupo" }, `<td colspan="${cab.length}">${l.grupo}</td>`)); return; }
+    tb.append(el("tr", l.classe ? { class: l.classe } : {}, l.cel.map(c => `<td>${c}</td>`).join("")));
+  });
+  t.append(tb); const b = $(alvo); b.innerHTML = ""; b.append(t);
+}
+
+/* ---------- cálculos ---------- */
+const PRECOS = rows("precos");
+const preco = (nome, campo = "var_12m") => serie("precos", r => r.serie === nome, "data", campo);
+const ultimoPreco = nome => { const s = PRECOS.filter(r => r.serie === nome).sort((a, b) => a.data < b.data ? -1 : 1); return s[s.length - 1]; };
+
+const META = {}; rows("meta").forEach(r => META[+r.ano] = { c: +r.centro, t: +r.tolerancia, ma: num(r.meta_atuarial_juro_real) });
+const ANO = new Date().getFullYear();
+const JURO_META = (META[ANO] && META[ANO].ma) || 5.30;
+
+// IPCA mensal: realizado e, nos meses sem divulgação, Focus
+const ipcaReal = {}; PRECOS.filter(r => r.serie === "IPCA").forEach(r => ipcaReal[r.data] = +r.var_mensal);
+const ipcaFocus = {}; rows("focus_ipca_mensal").forEach(r => ipcaFocus[r.mes] = +r.mediana);
+const hoje = new Date();
+function diasUteis(a, b) { let n = 0; const d = new Date(a); while (d < b) { const w = d.getDay(); if (w > 0 && w < 6) n++; d.setDate(d.getDate() + 1); } return n; }
+// meta atuarial acumulada no ano até a data (pró-rata por dias úteis no mês corrente)
+function metaAte(dataFim) {
+  const fim = new Date(dataFim); let p = 1; const linhasMeta = [];
+  for (let mIdx = 0; mIdx < 12; mIdx++) {
+    const ini = new Date(fim.getFullYear(), mIdx, 1), prox = new Date(fim.getFullYear(), mIdx + 1, 1);
+    if (ini > fim) break;
+    const chave = iso(new Date(Date.UTC(fim.getFullYear(), mIdx, 1)));
+    const real = ipcaReal[chave] != null, ipca = real ? ipcaReal[chave] : ipcaFocus[chave];
+    if (ipca == null) break;
+    const mensal = (1 + ipca / 100) * Math.pow(1 + JURO_META / 100, 1 / 12) - 1;
+    let frac = 1;
+    if (fim < prox) frac = diasUteis(ini, new Date(fim.getTime() + 864e5)) / diasUteis(ini, prox);
+    p *= Math.pow(1 + mensal, frac);
+    linhasMeta.push({ mes: ini, ipca, real, mensal: mensal * 100, frac, acum: (p - 1) * 100 });
+  }
+  return { acum: (p - 1) * 100, meses: linhasMeta };
+}
+
+// CDI acumulado entre duas datas (SGS 12, % ao dia)
+const JUROS = rows("juros").map(r => ({ d: r.data, selic: num(r.selic_meta), cdi: num(r.cdi_dia), dolar: num(r.dolar) }));
+function cdiEntre(a, b) { let p = 1; JUROS.forEach(r => { if (r.cdi != null && r.d > a && r.d <= b) p *= 1 + r.cdi / 100; }); return (p - 1) * 100; }
+const dolarS = JUROS.filter(r => r.dolar != null);
+function dolarEm(dt) { let v = null; for (const r of dolarS) { if (r.d <= dt) v = r.dolar; else break; } return v; }
+
+// índices de bolsa
+const BOLSA = {}; rows("bolsa").forEach(r => (BOLSA[r.indice] = BOLSA[r.indice] || []).push({ d: r.data, v: +r.fechamento }));
+Object.values(BOLSA).forEach(a => a.sort((x, y) => x.d < y.d ? -1 : 1));
+// S&P 500 em reais: fechamento em dólar × PTAX do mesmo dia (ou o último dia com PTAX)
+if (BOLSA["S&P 500 (US$)"]) BOLSA["S&P 500 (R$)"] = BOLSA["S&P 500 (US$)"].map(p => ({ d: p.d, v: p.v * (dolarEm(p.d) || NaN) })).filter(p => !isNaN(p.v));
+BOLSA["Dólar (PTAX)"] = dolarS.map(r => ({ d: r.d, v: r.dolar }));
+function valorEm(a, dt) { let v = null; for (const p of a) { if (p.d <= dt) v = p; else break; } return v; }
+function retorno(a, ini, fim) { const p0 = valorEm(a, ini), p1 = valorEm(a, fim); return (p0 && p1) ? (p1.v / p0.v - 1) * 100 : null; }
+
+// IMA (ANBIMA): último dia disponível
+const IMA = rows("ima"); const imaUlt = IMA.length ? IMA.map(r => r.data).sort().pop() : null;
+const imaDia = nome => IMA.find(r => r.data === imaUlt && r.indice === nome);
+
+// títulos
+const TIT = rows("titulos"); const titUlt = TIT.length ? TIT.map(r => r.data).sort().pop() : null;
+const ntnbUlt = TIT.filter(r => r.data === titUlt && r.titulo === "NTN-B").map(r => ({ venc: r.vencimento, taxa: +r.taxa_indicativa })).sort((a, b) => a.venc < b.venc ? -1 : 1);
+
+// datas de referência
+const fimMercado = [imaUlt, BOLSA["Ibovespa"] && BOLSA["Ibovespa"].slice(-1)[0].d].filter(Boolean).sort().pop() || iso(hoje);
+const fimAnoAnt = `${ANO - 1}-12-31`;
+const META_ANO = metaAte(pd(fimMercado));
+
+/* ---------- benchmarks ---------- */
+function benchmarks() {
+  const out = [];
+  const fimMesAnt = iso(new Date(pd(fimMercado).getFullYear(), pd(fimMercado).getMonth(), 0));
+  const dozeAntes = iso(new Date(pd(fimMercado).getFullYear() - 1, pd(fimMercado).getMonth(), pd(fimMercado).getDate()));
+  out.push({ grupo: "Caixa" });
+  out.push({ nome: "CDI", mes: cdiEntre(fimMesAnt, fimMercado), ano: cdiEntre(fimAnoAnt, fimMercado), m12: cdiEntre(dozeAntes, fimMercado), cor: COR[3] });
+  out.push({ grupo: "Renda fixa (ANBIMA)" });
+  ["IMA-B", "IMA-B 5", "IMA-B 5+", "IMA-GERAL ex-C", "IRF-M", "IRF-M 1", "IRF-M 1+", "IMA-S"].forEach(n => {
+    const r = imaDia(n); if (r) out.push({ nome: n, mes: num(r.var_mes), ano: num(r.var_ano), m12: num(r.var_12m), dur: num(r.duration_du), cor: n === "IMA-B" ? COR[0] : null });
+  });
+  out.push({ grupo: "Renda variável e exterior" });
+  [["Ibovespa", COR[1]], ["IFIX", null], ["S&P 500 (R$)", COR[2]], ["S&P 500 (US$)", null], ["Dólar (PTAX)", null]].forEach(([n, cor]) => {
+    const a = BOLSA[n]; if (!a || !a.length) return;
+    const fim = a[a.length - 1].d;
+    out.push({ nome: n, mes: retorno(a, fimMesAnt, fim), ano: retorno(a, fimAnoAnt, fim), m12: retorno(a, dozeAntes, fim), cor, fim });
+  });
+  return out;
+}
+
+/* ---------- VISÃO GERAL ---------- */
+function kpi(alvo, cls, rot, val, ctx) { $(alvo).append(el("div", { class: `cartao kpi ${cls}` }, `<div class="rot">${rot}</div><div class="val num">${val}</div><div class="ctx">${ctx}</div>`)); }
+
+function copomProximas() {
+  const C = rows("copom"); if (!C.length) return [];
+  const reunioes = Array.from(new Set(C.map(r => r.reuniao))).sort();
+  return reunioes.map(re => {
+    const dRe = C.filter(r => r.reuniao === re); const ult = dRe.map(r => r.data).sort().pop();
+    const cen = dRe.filter(r => r.data === ult).map(r => ({ c: r.cenario, p: +r.prob })).sort((a, b) => b.p - a.p);
+    return { reuniao: re, nome: dRe[0].reuniao_nome, data: ult, cen };
+  });
+}
+
+function geral() {
+  const k = $("kpis"); k.innerHTML = "";
+  const selic = JUROS.filter(r => r.selic != null).pop();
+  const prox = copomProximas()[0];
+  kpi("kpis", "c3", "Meta Selic", `${fmt(selic && selic.selic, 2)}<small>% a.a.</small>`,
+    prox ? `Copom de ${prox.nome.replace(/ de \d{4}$/, "")}: ${prox.cen[0].c.toLowerCase()} com ${fmt(prox.cen[0].p, 0)}% (opções B3)` : "");
+  const ip = ultimoPreco("IPCA"), mt = META[+ip.data.slice(0, 4)];
+  kpi("kpis", "c3", "IPCA em 12 meses", `${fmt(+ip.var_12m, 2)}<small>%</small>`,
+    `${fmtMes(pd(ip.data))}; meta de ${fmt(mt.c, 1)}% com teto de ${fmt(mt.c + mt.t, 1)}% ` + (+ip.var_12m > mt.c + mt.t ? '<span class="sinal-ruim">acima do teto</span>' : '<span class="sinal-bom">dentro do intervalo</span>'));
+  const fa = rows("focus_anual"), fu = fa.map(r => r.data).sort().pop();
+  const fIp = a => { const r = fa.find(x => x.indicador === "IPCA" && x.ano === String(a) && x.data === fu); return r ? +r.mediana : null; };
+  kpi("kpis", "c3", `Focus: IPCA ${ANO} e ${ANO + 1}`, `${fmt(fIp(ANO), 2)}<small>% · ${fmt(fIp(ANO + 1), 2)}%</small>`, `Mediana da pesquisa de ${fmtDia(pd(fu))}`);
+  const longa = ntnbUlt.filter(t => t.venc >= `${ANO + 10}`);
+  const med = longa.length ? d3.mean(longa, t => t.taxa) : null;
+  kpi("kpis", "c3", "NTN-B longas (10 anos ou mais)", `${fmt(med, 2)}<small>% + IPCA</small>`,
+    med != null ? `Média de ${longa.length} vencimentos em ${fmtDia(pd(titUlt))}: ${fmtS(med - JURO_META, 2)} p.p. sobre a meta de ${fmt(JURO_META, 2)}%` : "");
+
+  // gráfico de benchmarks no ano
+  const b = benchmarks().filter(x => !x.grupo && ["CDI", "IMA-B", "IMA-B 5", "IMA-B 5+", "IRF-M", "Ibovespa", "IFIX", "S&P 500 (R$)"].includes(x.nome) && x.ano != null);
+  barrasH("g-geral-bench", b.map(x => ({ nome: x.nome, v: x.ano, cor: "var(--s1)",
+    dica: `<div class="d-l"><span>No ano</span><b class="num">${fmt(x.ano, 2)}%</b></div><div class="d-l"><span>Meta atuarial</span><b class="num">${fmt(META_ANO.acum, 2)}%</b></div><div class="d-l"><span>Diferença</span><b class="num">${fmtS(x.ano - META_ANO.acum, 2)} p.p.</b></div>` })),
+    { refs: [{ y: META_ANO.acum, nome: `Meta atuarial no ano: ${fmt(META_ANO.acum, 2)}% (até ${fmtDia(pd(fimMercado))})` }], margemEsq: 104 });
+
+  // leitura automática
+  const L = $("leitura"); L.innerHTML = "";
+  const li = h => L.append(el("li", {}, h));
+  const nuc = ultimoPreco("Média dos 5 núcleos"), serv = ultimoPreco("IPCA serviços"), igpm = ultimoPreco("IGP-M");
+  li(`O IPCA subiu <b>${fmt(+ip.var_mensal, 2)}%</b> em ${fmtMes(pd(ip.data))} e acumula <b>${fmt(+ip.var_12m, 2)}%</b> em 12 meses. A média dos núcleos está em ${fmt(+nuc.var_12m, 2)}% e os serviços em ${fmt(+serv.var_12m, 2)}%.`);
+  li(`O IGP-M acumula <b>${fmt(+igpm.var_12m, 2)}%</b> em 12 meses (${fmtMes(pd(igpm.data))}), com ${fmt(+igpm.var_mensal, 2)}% no mês.`);
+  if (prox) {
+    const top = prox.cen.filter(c => c.p >= 5).map(c => `${c.c.toLowerCase()} (${fmt(c.p, 0)}%)`).join(", ");
+    li(`Para o Copom de ${prox.nome}, as opções da B3 indicam: ${top}.`);
+  }
+  const fs = rows("focus_selic"), fsu = fs.map(r => r.data).sort().pop();
+  const fsAno = fs.filter(r => r.data === fsu && r.ordem.startsWith(String(ANO))).sort((a, b) => a.ordem < b.ordem ? -1 : 1).pop();
+  if (fsAno) li(`O Focus projeta a Selic em <b>${fmt(+fsAno.mediana, 2)}%</b> na última reunião de ${ANO} e o IPCA de ${ANO} em <b>${fmt(fIp(ANO), 2)}%</b>.`);
+  if (med != null) li(`As NTN-B com vencimento a partir de ${ANO + 10} pagam em média <b>IPCA + ${fmt(med, 2)}%</b>, ${fmt(med - JURO_META, 2)} p.p. acima do juro real da meta atuarial.`);
+  const imab = imaDia("IMA-B"), ibov = b.find(x => x.nome === "Ibovespa");
+  if (imab) li(`No ano, o IMA-B rende <b>${fmt(+imab.var_ano, 2)}%</b> e o Ibovespa <b>${fmt(ibov && ibov.ano, 2)}%</b>, contra uma meta atuarial acumulada de ${fmt(META_ANO.acum, 2)}%.`);
+}
+
+/* ---------- INFLAÇÃO ---------- */
+function inflacao() {
+  const desde = pd("2019-01-01");
+  const ipca = preco("IPCA").filter(p => p.x >= desde);
+  const faixa = ipca.map(p => { const m = META[p.x.getFullYear()]; return { x: p.x, y0: m.c - m.t, y1: m.c + m.t }; });
+  const centro = ipca.map(p => ({ x: p.x, y: META[p.x.getFullYear()].c }));
+  linhas("g-ipca", [{ nome: "IPCA 12 meses", cor: COR[0], pontos: ipca }, { nome: "Centro da meta", cor: "var(--ref)", pontos: centro, tracejado: true }],
+    { faixa: { nome: "Intervalo de tolerância", pontos: faixa }, unid: "%", rotulo: "IPCA acumulado em 12 meses" });
+  const d2 = pd("2022-01-01");
+  linhas("g-nucleos", [
+    { nome: "IPCA", cor: COR[0], pontos: preco("IPCA").filter(p => p.x >= d2) },
+    { nome: "Média dos 5 núcleos", cor: COR[1], pontos: preco("Média dos 5 núcleos").filter(p => p.x >= d2) },
+    { nome: "Serviços", cor: COR[2], pontos: preco("IPCA serviços").filter(p => p.x >= d2) }], { unid: "%" });
+  linhas("g-igp", [
+    { nome: "IGP-M", cor: COR[0], pontos: preco("IGP-M").filter(p => p.x >= d2) },
+    { nome: "IPA-M", cor: COR[1], pontos: preco("IPA-M").filter(p => p.x >= d2) },
+    { nome: "IPCA", cor: COR[2], pontos: preco("IPCA").filter(p => p.x >= d2) }], { unid: "%" });
+  const grupos = [["Consumidor", ["IPCA", "IPCA livres", "IPCA administrados", "IPCA serviços", "IPCA bens industriais", "IPC-Fipe"]],
+    ["Núcleos do IPCA", ["Média dos 5 núcleos", "Núcleo EX0", "Núcleo EX3", "Núcleo MS", "Núcleo DP", "Núcleo P55", "Núcleo EX-FE"]],
+    ["Índices gerais (FGV)", ["IGP-M", "IGP-DI", "IGP-10", "IPA-M", "IPC-M", "INCC-M"]]];
+  grupos.forEach(([g, ns], gi) => { const L = [{ grupo: g }]; ns.forEach(n => { const r = ultimoPreco(n); if (!r) return;
+    L.push({ cel: [n.replace("IPCA ", "").replace(/^livres|^administrados|^serviços|^bens industriais/, s => s[0].toUpperCase() + s.slice(1)), fmt(+r.var_mensal, 2), fmt(+r.var_ano, 2), fmt(+r.var_12m, 2), fmtMes(pd(r.data))], classe: n === "IPCA" || n === "IGP-M" ? "destaque" : "" }); });
+    tabela("tab-precos-" + gi, ["Índice", "Mês", "Ano", "12 m", "Ref."], L); });
+  $("desc-tab-precos").textContent = "Variação (%) no mês, no ano e em 12 meses.";
+}
+
+/* ---------- FOCUS ---------- */
+function focusAba() {
+  const fa = rows("focus_anual"); if (!fa.length) return;
+  const datas = Array.from(new Set(fa.map(r => r.data))).sort(); const ult = datas[datas.length - 1];
+  const ant = datas.filter(d => d <= iso(new Date(pd(ult) - 27 * 864e5))).pop();
+  const anos = Array.from(new Set(fa.map(r => r.ano))).sort();
+  const nomes = { "IPCA": "IPCA (%)", "IPCA Administrados": "IPCA administrados (%)", "IGP-M": "IGP-M (%)", "PIB Total": "PIB (% de crescimento)",
+    "Câmbio": "Câmbio (R$/US$, fim do ano)", "Selic": "Selic (% a.a., fim do ano)", "Resultado primário": "Resultado primário (% do PIB)",
+    "Dívida líquida do setor público": "Dívida líquida do setor público (% do PIB)" };
+  const g = (ind, ano, d) => { const r = fa.find(x => x.indicador === ind && x.ano === ano && x.data === d); return r ? +r.mediana : null; };
+  const L = [];
+  Object.keys(nomes).forEach(ind => {
+    const c = [nomes[ind]];
+    anos.forEach(a => {
+      const v = g(ind, a, ult), v0 = g(ind, a, ant), casas = ind === "Câmbio" ? 2 : (ind === "Selic" ? 2 : 2);
+      let seta = "";
+      if (v != null && v0 != null && Math.abs(v - v0) > 1e-6) seta = v > v0 ? ' <span class="seta-alta" title="subiu">▲</span>' : ' <span class="seta-baixa" title="caiu">▼</span>';
+      c.push(fmt(v, casas) + seta, `<span style="color:var(--ink-3)">${fmt(v0, casas)}</span>`);
+    });
+    L.push({ cel: c });
+  });
+  tabela("tab-focus", ["Indicador"].concat(anos.flatMap(a => [`${a}`, "4 semanas"])), L);
+  $("desc-focus").innerHTML = `Pesquisa de ${fmtDia(pd(ult))}, comparada com a de ${fmtDia(pd(ant))}. ▲ revisão para cima, ▼ para baixo.`;
+  const ev = (ind, ano) => fa.filter(r => r.indicador === ind && r.ano === ano).map(r => ({ x: pd(r.data), y: +r.mediana })).sort((a, b) => a.x - b.x);
+  linhas("g-focus-ipca", anos.slice(0, 3).map((a, i) => ({ nome: `IPCA ${a}`, cor: COR[i], pontos: ev("IPCA", a) })), { unid: "%", diario: true, refs: [{ y: 3, nome: "Meta de 3%" }] });
+  linhas("g-focus-selic", anos.slice(0, 3).map((a, i) => ({ nome: `Selic ${a}`, cor: COR[i], pontos: ev("Selic", a) })), { unid: "%", diario: true, degrau: true });
+  const f12 = rows("focus_12m");
+  linhas("g-focus-12m", [["IPCA", COR[0]], ["IGP-M", COR[1]]].map(([n, c]) => ({ nome: n, cor: c, pontos: f12.filter(r => r.indicador === n).map(r => ({ x: pd(r.data), y: +r.mediana })).sort((a, b) => a.x - b.x) })),
+    { unid: "%", diario: true, refs: [{ y: 3, nome: "Meta de 3%" }] });
+}
+
+/* ---------- COPOM ---------- */
+function copomAba() {
+  const prox = copomProximas(); if (!prox.length) return;
+  // barras empilhadas 100%: uma por reunião, cenários com ≥1% em ordem de corte → alta
+  const ordemCen = c => { if (c === "Manutenção") return 0; const v = parseFloat(c.replace(/[^\d,]/g, "").replace(",", ".")); return c.startsWith("Queda") ? -v : v; };
+  const box = $("g-copom"); box.innerHTML = "";
+  const todosCen = new Set(); prox.forEach(r => r.cen.filter(c => c.p >= 1).forEach(c => todosCen.add(c.c)));
+  const cens = Array.from(todosCen).sort((a, b) => ordemCen(a) - ordemCen(b));
+  // cor: cortes em azuis (mais forte = corte maior), manutenção cinza, altas em magentas
+  const corCen = c => { const o = ordemCen(c); if (o === 0) return "var(--ink-3)"; const fort = Math.min(1, Math.abs(o) / 1); return o < 0 ? `color-mix(in oklab, var(--s1) ${45 + 55 * fort}%, var(--surface))` : `color-mix(in oklab, var(--s2) ${45 + 55 * fort}%, var(--surface))`; };
+  const leg = el("div", { class: "legenda" }); cens.forEach(c => leg.append(el("span", {}, `<i style="background:${corCen(c)};height:10px;width:10px;border-radius:2px"></i>${c}`)));
+  leg.append(el("span", {}, `<i style="background:var(--grid);height:10px;width:10px;border-radius:2px"></i>Demais (&lt;1%)`)); box.append(leg);
+  const W = Math.max(box.clientWidth, 280), lin = 38, m = { t: 4, r: 12, b: 22, l: 150 }, H = m.t + m.b + prox.length * lin;
+  const x = d3.scaleLinear().domain([0, 100]).range([m.l, W - m.r]);
+  const yb = d3.scaleBand().domain(prox.map(r => r.nome)).range([m.t, H - m.b]).paddingInner(.32);
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(v => v + "%").tickSize(0).tickPadding(6)).call(g => g.select(".domain").remove());
+  const dica = el("div", { class: "dica" }); box.append(dica);
+  prox.forEach(r => {
+    const tot = d3.sum(r.cen, c => c.p) || 100; let acc = 0;
+    const segs = cens.map(c => { const q = r.cen.find(z => z.c === c); return { c, p: q ? q.p / tot * 100 : 0 }; }).filter(s => s.p > 0);
+    const resto = 100 - d3.sum(segs, s => s.p); if (resto > 0.05) segs.push({ c: "Demais (<1%)", p: resto, outros: true });
+    svg.append("text").attr("x", m.l - 8).attr("y", yb(r.nome) + yb.bandwidth() / 2).attr("dy", "0.35em").attr("text-anchor", "end").attr("fill", "var(--ink-2)").attr("font-size", 12).text(r.nome.replace(/ de (\d{4})$/, "/$1"));
+    segs.forEach(s => {
+      const x0 = x(acc), x1 = x(acc + s.p); acc += s.p;
+      svg.append("rect").attr("x", x0 + 1).attr("width", Math.max(0, x1 - x0 - 2)).attr("y", yb(r.nome)).attr("height", yb.bandwidth()).attr("rx", 3)
+        .attr("fill", s.outros ? "var(--grid)" : corCen(s.c))
+        .on("pointermove", ev => { dica.innerHTML = `<div class="d-t">${r.nome}</div><div class="d-l"><span>${s.c}</span><b class="num">${fmt(s.p, 1)}%</b></div>`; dica.style.display = "block";
+          const [mx, my] = d3.pointer(ev, box); dica.style.left = Math.min(mx + 12, box.clientWidth - dica.offsetWidth - 4) + "px"; dica.style.top = (my + 14) + "px"; })
+        .on("pointerleave", () => dica.style.display = "none");
+      if (x1 - x0 > 34) svg.append("text").attr("class", "num").attr("x", (x0 + x1) / 2).attr("y", yb(r.nome) + yb.bandwidth() / 2).attr("dy", "0.35em").attr("text-anchor", "middle")
+        .attr("fill", s.c === "Manutenção" || ordemCen(s.c) !== 0 ? "#fff" : "var(--ink)").attr("font-size", 11).attr("font-weight", 600).attr("pointer-events", "none").text(fmt(s.p, 0) + "%");
+    });
+  });
+  const selicB3 = JUROS.filter(r => r.selic != null).pop();
+  $("desc-copom").textContent = `Probabilidade (%) de cada variação da Selic em cada reunião, pelos preços de ${fmtDia(pd(prox[0].data))}. Meta Selic atual: ${fmt(selicB3.selic, 2)}%.`;
+  // histórico da próxima reunião: os três cenários mais prováveis hoje
+  const C = rows("copom").filter(r => r.reuniao === prox[0].reuniao);
+  const top = prox[0].cen.slice(0, 3).map(c => c.c);
+  linhas("g-copom-hist", top.map((c, i) => ({ nome: c, cor: COR[i], pontos: C.filter(r => r.cenario === c).map(r => ({ x: pd(r.data), y: +r.prob })).sort((a, b) => a.x - b.x) })),
+    { unid: "%", diario: true, casas: 1 });
+  $("desc-copom-hist").textContent = `Reunião de ${prox[0].nome}: probabilidade (%) dos três cenários mais prováveis, por pregão.`;
+  // Focus por reunião
+  const fs = rows("focus_selic"); const ds = Array.from(new Set(fs.map(r => r.data))).sort();
+  const rot = o => { const [a, n] = o.split("-"); return `R${+n}/${a.slice(2)}`; };
+  const ordens = Array.from(new Set(fs.map(r => r.ordem))).sort(); const idx = o => ordens.indexOf(o);
+  linhas("g-focus-reuniao", ds.slice().reverse().map((d, i) => ({ nome: i === 0 ? `Pesquisa de ${fmtDia(pd(d))}` : `Quatro semanas antes (${fmtDia(pd(d))})`, cor: i === 0 ? COR[0] : COR[2], tracejado: i > 0,
+    pontos: fs.filter(r => r.data === d).map(r => ({ x: idx(r.ordem), y: +r.mediana })).sort((a, b) => a.x - b.x) })),
+    { xNum: true, fmtX: v => Number.isInteger(v) && ordens[v] ? rot(ordens[v]) : "", fmtDicaX: v => `Reunião ${rot(ordens[v])}`, unid: "%", degrau: true, marcadores: true });
+  // curva prefixada
+  curvas();
+}
+
+function curvas() {
+  const E = rows("ettj"); if (!E.length) { $("g-curva-pre").innerHTML = '<div class="vazio">Sem dados ainda.</div>'; return; }
+  const datas = Array.from(new Set(E.map(r => r.data))).sort();
+  const ult = datas[datas.length - 1];
+  const opcoes = [["1 semana", 7], ["1 mês", 30], ["3 meses", 91], ["Início do ano", null]];
+  let escolha = (() => { try { return localStorage.getItem("previmpa-curva") || "1 semana"; } catch (e) { return "1 semana"; } })();
+  const sel = $("sel-curva"); sel.innerHTML = "";
+  const comp = nome => { const o = opcoes.find(z => z[0] === nome); const lim = o[1] == null ? `${ANO}-01-01` : iso(new Date(pd(ult) - o[1] * 864e5));
+    return o[1] == null ? datas.find(d => d >= lim) : datas.filter(d => d <= lim).pop(); };
+  const desenha = () => {
+    sel.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === escolha));
+    let d0 = comp(escolha); if (!d0 || d0 === ult) d0 = datas[0];
+    const pts = (d, campo, max) => E.filter(r => r.data === d && r[campo] !== "" && +r.du <= max).map(r => ({ x: +r.du / 252, y: +r[campo] })).sort((a, b) => a.x - b.x);
+    linhas("g-curva-pre", [{ nome: `Prefixada em ${fmtDia(pd(ult))}`, cor: COR[0], pontos: pts(ult, "prefixada", 2520) },
+      ...(d0 !== ult ? [{ nome: `Prefixada em ${fmtDia(pd(d0))}`, cor: COR[2], tracejado: true, pontos: pts(d0, "prefixada", 2520) }] : [])],
+      { xNum: true, fmtX: v => v + "a", fmtDicaX: v => `${fmt(v, 1)} anos`, unid: "%", rotuloFinal: false, refs: [{ y: JUROS.filter(r => r.selic != null).pop().selic, nome: "Meta Selic atual" }] });
+  };
+  opcoes.forEach(([n]) => { const b = el("button", { type: "button", "data-v": n }, n); b.onclick = () => { escolha = n; try { localStorage.setItem("previmpa-curva", n); } catch (e) {} desenha(); }; sel.append(b); });
+  sel.append(el("span", { style: "align-self:center;padding:0 10px;font-size:11.5px;color:var(--ink-3)" }, `histórico desde ${fmtDia(pd(datas[0]))}`));
+  desenha();
+}
+
+function curvaReal() {
+  const E = rows("ettj"); if (!E.length) { $("g-curva-real").innerHTML = '<div class="vazio">Sem dados ainda.</div>'; return; }
+  const ult = E.map(r => r.data).sort().pop();
+  const real = E.filter(r => r.data === ult && r.ipca !== "").map(r => ({ x: +r.du / 252, y: +r.ipca })).sort((a, b) => a.x - b.x);
+  const impl = E.filter(r => r.data === ult && r.inflacao_implicita !== "").map(r => ({ x: +r.du / 252, y: +r.inflacao_implicita })).sort((a, b) => a.x - b.x);
+  linhas("g-curva-real", [{ nome: "Juro real (ETTJ IPCA)", cor: COR[0], pontos: real }, { nome: "Inflação implícita", cor: COR[1], pontos: impl }],
+    { xNum: true, fmtX: v => v + "a", fmtDicaX: v => `${fmt(v, 1)} anos`, unid: "%", rotuloFinal: false, refs: [{ y: JURO_META, nome: `Juro real da meta atuarial (${fmt(JURO_META, 2)}%)` }] });
+}
+
+/* ---------- NTN-B ---------- */
+function ntnbAba() {
+  const k = $("kpis-ntnb"); k.innerHTML = "";
+  if (!ntnbUlt.length) return;
+  const venc = v => v.slice(0, 4);
+  const acha = a => ntnbUlt.find(t => venc(t.venc) === a);
+  [["2035", "c3"], ["2040", "c3"], ["2050", "c3"], ["2060", "c3"]].forEach(([a, c]) => {
+    const t = acha(a); if (!t) return;
+    const folga = t.taxa - JURO_META;
+    kpi("kpis-ntnb", c, `NTN-B ${a}`, `${fmt(t.taxa, 2)}<small>% + IPCA</small>`,
+      `<span class="${folga >= 0 ? "sinal-bom" : "sinal-ruim"}">${fmtS(folga, 2)} p.p.</span> sobre a meta de ${fmt(JURO_META, 2)}%` + (a === "2040" ? " · é a NTN-B marcada a mercado da carteira" : ""));
+  });
+  linhas("g-ntnb-venc", [{ nome: `Taxa indicativa em ${fmtDia(pd(titUlt))}`, cor: COR[0], pontos: ntnbUlt.map(t => ({ x: pd(t.venc), y: t.taxa })) }],
+    { refs: [{ y: JURO_META, nome: `Meta atuarial: IPCA + ${fmt(JURO_META, 2)}%` }], unid: "%", marcadores: true, fmtX: d => d.getFullYear(), rotuloFinal: false, casas: 2, altura: 440 });
+  // tabela
+  const L = ntnbUlt.map(t => {
+    const ant = TIT.filter(r => r.titulo === "NTN-B" && r.vencimento === t.venc && r.data < titUlt).sort((a, b) => a.data < b.data ? -1 : 1)[0];
+    const f = t.taxa - JURO_META;
+    return { cel: [`NTN-B ${fmtMes(pd(t.venc))}`, fmt(t.taxa, 2), `<span class="${f >= 0 ? "sinal-bom" : "sinal-ruim"}">${fmtS(f, 2)}</span>`, ant ? fmtS(t.taxa - +ant.taxa_indicativa, 2) : "–"], classe: venc(t.venc) === "2040" ? "destaque" : "" };
+  });
+  tabela("tab-ntnb", ["Título", "Taxa (%)", "Folga (p.p.)", "Var. (p.p.)"], L);
+  curvaReal();
+  const prim = TIT.map(r => r.data).sort()[0];
+  $("desc-tab-ntnb").textContent = `Taxas de ${fmtDia(pd(titUlt))}. "Var." é a mudança desde ${fmtDia(pd(prim))}, o primeiro dia guardado.`;
+  // histórico
+  const hist = a => TIT.filter(r => r.titulo === "NTN-B" && r.vencimento.startsWith(a)).map(r => ({ x: pd(r.data), y: +r.taxa_indicativa })).sort((x, y) => x.x - y.x);
+  linhas("g-ntnb-hist", [["2030", COR[2]], ["2040", COR[0]], ["2060", COR[1]]].map(([a, c]) => ({ nome: `NTN-B ${a}`, cor: c, pontos: hist(a) })),
+    { refs: [{ y: JURO_META, nome: `Meta atuarial (${fmt(JURO_META, 2)}%)` }], unid: "%", diario: true, casas: 2, marcadores: hist("2040").length < 40 });
+  $("desc-ntnb-hist").textContent = `Taxa indicativa ANBIMA (% a.a. acima do IPCA), por dia, desde ${fmtDia(pd(prim))}.`;
+  // meta mês a mês
+  const M = metaAte(new Date(ANO, 11, 31)).meses;
+  tabela("tab-meta", ["Mês", "IPCA (%)", "Origem do IPCA", "Meta no mês (%)", "Meta acumulada (%)"],
+    M.map(m => ({ cel: [fmtMes(m.mes), fmt(m.ipca, 2), m.real ? "IBGE" : "Focus (mediana)", fmt(m.mensal, 2), fmt(m.acum, 2)] })));
+}
+
+/* ---------- MERCADOS ---------- */
+function mercados() {
+  const B = benchmarks();
+  const L = B.map(x => x.grupo ? x : { cel: [x.nome, fmt(x.mes, 2), fmt(x.ano, 2),
+    x.ano == null ? "–" : `<span class="${x.ano >= META_ANO.acum ? "sinal-bom" : "sinal-ruim"}">${fmtS(x.ano - META_ANO.acum, 2)}</span>`, fmt(x.m12, 2)],
+    classe: ["IMA-B", "Ibovespa", "S&P 500 (R$)", "CDI"].includes(x.nome) ? "destaque" : "" });
+  L.push({ grupo: "Referência" });
+  L.push({ cel: [`Meta atuarial (IPCA + ${fmt(JURO_META, 2)}%)`, "", fmt(META_ANO.acum, 2), "", ""], classe: "destaque" });
+  tabela("tab-bench", ["Índice", "No mês (%)", "No ano (%)", "Ano − meta (p.p.)", "12 meses (%)"], L);
+  $("desc-tab-bench").textContent = `Renda fixa até ${imaUlt ? fmtDia(pd(imaUlt)) : "–"} (ANBIMA); bolsa e câmbio até o último pregão disponível. Índices de referência da Política de Investimentos em negrito.`;
+  // acumulado no ano
+  const acum = (a, cor, nome) => { const p0 = valorEm(a, fimAnoAnt); if (!p0) return null; return { nome, cor, pontos: a.filter(p => p.d > fimAnoAnt).map(p => ({ x: pd(p.d), y: (p.v / p0.v - 1) * 100 })) }; };
+  const cdiS = (() => { let p = 1; return { nome: "CDI", cor: COR[3], pontos: JUROS.filter(r => r.d > fimAnoAnt && r.cdi != null).map(r => { p *= 1 + r.cdi / 100; return { x: pd(r.d), y: (p - 1) * 100 }; }) }; })();
+  const metaS = { nome: "Meta atuarial", cor: "var(--ref)", tracejado: true, pontos: [] };
+  for (let d = new Date(ANO, 0, 2); d <= pd(fimMercado); d.setDate(d.getDate() + 7)) metaS.pontos.push({ x: new Date(d), y: metaAte(new Date(d)).acum });
+  metaS.pontos.push({ x: pd(fimMercado), y: META_ANO.acum });
+  linhas("g-acum", [acum(BOLSA["Ibovespa"] || [], COR[1], "Ibovespa"), acum(BOLSA["S&P 500 (R$)"] || [], COR[2], "S&P 500 (R$)"), acum(BOLSA["IFIX"] || [], COR[0], "IFIX"), cdiS, metaS].filter(Boolean),
+    { unid: "%", diario: true });
+  const umAno = iso(new Date(hoje - 365 * 864e5));
+  linhas("g-dolar", [{ nome: "Dólar", cor: COR[0], pontos: dolarS.filter(r => r.d >= umAno).map(r => ({ x: pd(r.d), y: r.dolar })) }], { diario: true, casas: 4, casasEixo: 2 });
+}
+
+/* ---------- abas, tema e desenho ---------- */
+const desenhar = { geral, inflacao, focus: focusAba, copom: copomAba, ntnb: ntnbAba, mercados };
+let atual = "geral";
+function abrir(nome) {
+  atual = nome;
+  document.querySelectorAll(".abas button").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === nome));
+  document.querySelectorAll("section.aba").forEach(s => s.classList.toggle("ativa", s.id === "aba-" + nome));
+  try { history.replaceState(null, "", "#" + nome); } catch (e) {}
+  desenhar[nome]();
+}
+document.querySelectorAll(".abas button").forEach(b => b.onclick = () => abrir(b.dataset.aba));
+const tema = $("tema");
+const aplicaTema = t => { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme");
+  const escuro = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; tema.textContent = escuro ? "Tema claro" : "Tema escuro"; };
+let temaSalvo = null; try { temaSalvo = localStorage.getItem("previmpa-tema"); } catch (e) {}
+aplicaTema(temaSalvo);
+tema.onclick = () => { const escuro = document.documentElement.getAttribute("data-theme") ? document.documentElement.getAttribute("data-theme") === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const novo = escuro ? "light" : "dark"; try { localStorage.setItem("previmpa-tema", novo); } catch (e) {} aplicaTema(novo); desenhar[atual](); };
+let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => desenhar[atual](), 150); });
+$("ultimo-dado").textContent = `mercado até ${fmtDia(pd(fimMercado))}`;
+const inicial = (location.hash || "").slice(1);
+abrir(desenhar[inicial] ? inicial : "geral");
+})();
+</script>
+</body>
+</html>
