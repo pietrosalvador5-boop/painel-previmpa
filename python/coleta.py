@@ -338,7 +338,31 @@ def ima():
              novas, chave=(0, 1))
 
 
-ETAPAS = (precos, focus, copom, juros, bolsa, titulos, ettj, ima)
+def tesouro():
+    """Histórico das NTN-B pelo Tesouro Direto (Tesouro IPCA+ com Juros Semestrais), desde 2018.
+
+    A ANBIMA só publica os últimos 5 dias úteis; o Tesouro Transparente tem a série inteira das taxas
+    oferecidas no Tesouro Direto. Guarda a taxa de compra e a de venda (o painel usa a de venda, mais próxima
+    da taxa indicativa da ANBIMA). O site do Tesouro às vezes recusa por excesso de pedidos (HTTP 429):
+    nesse caso fica o arquivo anterior.
+    """
+    url = ("https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/"
+           "resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv")
+    txt = curl(url, tentativas=3)
+    if not txt or not txt.startswith("Tipo Titulo"):
+        raise RuntimeError("Tesouro Transparente não devolveu o CSV")
+    linhas = []
+    for l in txt.splitlines()[1:]:
+        c = l.split(";")
+        if len(c) < 5 or c[0] != "Tesouro IPCA+ com Juros Semestrais":
+            continue
+        d = data_br(c[2])
+        if d >= "2018-01-01":
+            linhas.append([d, data_br(c[1]), num_br(c[3]), num_br(c[4])])
+    gravar("ntnb_tesouro", ["data", "vencimento", "taxa_compra", "taxa_venda"], sorted(linhas))
+
+
+ETAPAS = (precos, focus, copom, juros, bolsa, titulos, ettj, ima, tesouro)
 
 
 def main():
