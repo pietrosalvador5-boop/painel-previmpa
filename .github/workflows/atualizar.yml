@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Instala o leitor de planilhas .xls (histórico do Tesouro)
+        run: pip install xlrd
+
       - name: Baixa os dados
         run: python3 python/coleta.py
 

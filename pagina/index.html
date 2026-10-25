@@ -243,6 +243,7 @@ footer.rodape p { margin: 0 0 6px; }
       <div class="cartao c4"><h3>Taxa e folga sobre a meta</h3><p class="desc" id="desc-tab-ntnb"></p>
         <div class="tab-wrap" id="tab-ntnb"></div><p class="fonte">Fonte: ANBIMA. Folga = taxa − 5,30 p.p.</p></div>
       <div class="cartao c6"><h3>Taxas das NTN-B ao longo do tempo</h3><p class="desc" id="desc-ntnb-hist"></p>
+        <div class="seletor" id="sel-ntnb"></div>
         <div class="grafico" id="g-ntnb-hist"></div><p class="fonte" id="fonte-ntnb-hist">Fonte: ANBIMA.</p></div>
       <div class="cartao c6"><h3>Curva real e inflação implícita</h3><p class="desc">ETTJ IPCA (juro real) e inflação implícita (pré contra real), % a.a., dia mais recente.</p>
         <div class="grafico" id="g-curva-real"></div><p class="fonte">Fonte: ANBIMA, ETTJ.</p></div>
@@ -369,7 +370,7 @@ function linhas(alvo, series, op = {}) {
       const i = d3.bisectCenter(xsUnicos, alvoX); const xv = xsUnicos[i];
       guia.style("display", null).attr("x1", xs(xv)).attr("x2", xs(xv));
       pts.style("display", null).selectAll("*").remove();
-      const tit = op.xNum ? (op.fmtDicaX || (v => v))(xv) : (op.diario ? fmtDia(new Date(xv)) : fmtMes(new Date(xv)));
+      const tit = op.xNum ? (op.fmtDicaX || (v => v))(xv) : (op.diario || op.dicaDia ? fmtDia(new Date(xv)) : fmtMes(new Date(xv)));
       let html = `<div class="d-t">${tit}</div>`;
       series.forEach(s => {
         const q = s.pontos.find(p => +p.x === xv); if (!q) return;
@@ -734,14 +735,48 @@ function ntnbAba() {
   const prim = TIT.map(r => r.data).sort()[0];
   $("desc-tab-ntnb").textContent = `Taxas de ${fmtDia(pd(titUlt))}. "Var." é a mudança desde ${fmtDia(pd(prim))}, o primeiro dia guardado.`;
   // histórico
-  const hist = a => TIT.filter(r => r.titulo === "NTN-B" && r.vencimento.startsWith(a)).map(r => ({ x: pd(r.data), y: +r.taxa_indicativa })).sort((x, y) => x.x - y.x);
-  linhas("g-ntnb-hist", [["2030", COR[2]], ["2040", COR[0]], ["2060", COR[1]]].map(([a, c]) => ({ nome: `NTN-B ${a}`, cor: c, pontos: hist(a) })),
-    { refs: [{ y: JURO_META, nome: `Meta atuarial (${fmt(JURO_META, 2)}%)` }], unid: "%", diario: true, casas: 2, marcadores: hist("2040").length < 40 });
-  $("desc-ntnb-hist").textContent = `Taxa indicativa ANBIMA (% a.a. acima do IPCA), por dia, desde ${fmtDia(pd(prim))}.`;
+  ntnbHistorico();
   // meta mês a mês
   const M = metaAte(new Date(ANO, 11, 31)).meses;
   tabela("tab-meta", ["Mês", "IPCA (%)", "Origem do IPCA", "Meta no mês (%)", "Meta acumulada (%)"],
     M.map(m => ({ cel: [fmtMes(m.mes), fmt(m.ipca, 2), m.real ? "IBGE" : "Focus (mediana)", fmt(m.mensal, 2), fmt(m.acum, 2)] })));
+}
+
+// histórico das NTN-B: Tesouro Direto (taxa de venda) até o primeiro dia guardado da ANBIMA; ANBIMA depois
+function ntnbHistorico() {
+  const TD = rows("ntnb_tesouro");
+  const hist = a => {
+    const anb = TIT.filter(r => r.titulo === "NTN-B" && r.vencimento.startsWith(a)).map(r => ({ x: pd(r.data), y: +r.taxa_indicativa, d: r.data }));
+    const ini = anb.length ? anb.map(p => p.d).sort()[0] : "9999";
+    const td = TD.filter(r => r.vencimento.startsWith(a) && r.data < ini && r.taxa_venda !== "").map(r => ({ x: pd(r.data), y: +r.taxa_venda, d: r.data }));
+    const s = td.concat(anb).sort((x, y) => x.x - y.x), out = [];
+    // intervalo sem dado (mais de 10 dias entre o Tesouro e a ANBIMA) vira lacuna, não uma reta
+    s.forEach((p, i) => { if (i && p.x - s[i - 1].x > 10 * 864e5) out.push({ x: new Date(+s[i - 1].x + 864e5), y: null }); out.push(p); });
+    return out;
+  };
+  const VENC = ["2030", "2040", "2060"];
+  const tdIni = TD.filter(r => VENC.some(a => r.vencimento.startsWith(a))).map(r => r.data).sort()[0] || null;
+  const anbIni = TIT.length ? TIT.map(r => r.data).sort()[0] : null;
+  const opcoes = tdIni ? [["1 ano", 365], ["3 anos", 3 * 365], [`Desde ${tdIni.slice(0, 4)}`, null]] : [];
+  let escolha = (() => { try { return localStorage.getItem("previmpa-ntnb") || "3 anos"; } catch (e) { return "3 anos"; } })();
+  if (!opcoes.find(o => o[0] === escolha) && opcoes.length) escolha = opcoes[1][0];   // "Desde ..." muda de ano com os dados
+  const sel = $("sel-ntnb"); sel.innerHTML = ""; sel.style.display = opcoes.length ? "" : "none";
+  const desenha = () => {
+    sel.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === escolha));
+    const o = opcoes.find(z => z[0] === escolha);
+    const lim = o && o[1] ? new Date(hoje - o[1] * 864e5) : new Date(0);
+    const curto = !tdIni;
+    linhas("g-ntnb-hist", VENC.map((a, i) => [a, [COR[2], COR[0], COR[1]][i]]).map(([a, c]) => ({ nome: `NTN-B ${a}`, cor: c, pontos: hist(a).filter(p => p.x >= lim) })),
+      { refs: [{ y: JURO_META, nome: `Meta atuarial (${fmt(JURO_META, 2)}%)` }], unid: "%", casas: 2, diario: curto, dicaDia: true, marcadores: curto,
+        fmtX: curto ? undefined : (o && o[1] && o[1] <= 365 ? (d => fmtMes(d)) : (d => String(d.getFullYear()))) });
+  };
+  opcoes.forEach(([n]) => { const b = el("button", { type: "button", "data-v": n }, n); b.onclick = () => { escolha = n; try { localStorage.setItem("previmpa-ntnb", n); } catch (e) {} desenha(); }; sel.append(b); });
+  desenha();
+  $("desc-ntnb-hist").textContent = tdIni
+    ? `Taxa (% a.a. acima do IPCA), por dia. Até ${fmtDia(pd(anbIni))}: taxa de venda do Tesouro Direto; depois, taxa indicativa ANBIMA.`
+    : `Taxa indicativa ANBIMA (% a.a. acima do IPCA), por dia, desde ${fmtDia(pd(anbIni))}.`;
+  const tdFim = TD.map(r => r.data).sort().pop();
+  $("fonte-ntnb-hist").textContent = tdIni ? `Fontes: Tesouro Nacional, histórico de preços e taxas do Tesouro Direto (Tesouro IPCA+ com Juros Semestrais, disponível até ${fmtDia(pd(tdFim))}), e ANBIMA. A lacuna é o período ainda sem dado em nenhuma das duas.` : "Fonte: ANBIMA.";
 }
 
 /* ---------- MERCADOS ---------- */

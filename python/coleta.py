@@ -341,24 +341,31 @@ def ima():
 def tesouro():
     """Histórico das NTN-B pelo Tesouro Direto (Tesouro IPCA+ com Juros Semestrais), desde 2018.
 
-    A ANBIMA só publica os últimos 5 dias úteis; o Tesouro Transparente tem a série inteira das taxas
-    oferecidas no Tesouro Direto. Guarda a taxa de compra e a de venda (o painel usa a de venda, mais próxima
-    da taxa indicativa da ANBIMA). O site do Tesouro às vezes recusa por excesso de pedidos (HTTP 429):
-    nesse caso fica o arquivo anterior.
+    A ANBIMA só publica os últimos 5 dias úteis. O Tesouro publica uma planilha .xls por ano com as taxas
+    diárias de cada NTN-B ofertada (uma aba por vencimento). Guarda a taxa de compra e a de venda; o painel
+    usa a de venda, mais próxima da taxa indicativa da ANBIMA. (O CSV do Tesouro Transparente tem a mesma
+    série, mas o site bloqueia com HTTP 429 quem baixa com frequência.) A planilha do ano corrente às vezes
+    fica algumas semanas atrás.
     """
-    url = ("https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/"
-           "resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv")
-    txt = curl(url, tentativas=3)
-    if not txt or not txt.startswith("Tipo Titulo"):
-        raise RuntimeError("Tesouro Transparente não devolveu o CSV")
+    import tempfile
+    import xlrd
     linhas = []
-    for l in txt.splitlines()[1:]:
-        c = l.split(";")
-        if len(c) < 5 or c[0] != "Tesouro IPCA+ com Juros Semestrais":
-            continue
-        d = data_br(c[2])
-        if d >= "2018-01-01":
-            linhas.append([d, data_br(c[1]), num_br(c[3]), num_br(c[4])])
+    for ano in range(2018, HOJE.year + 1):
+        url = f"https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/sistd/{ano}/NTN-B_{ano}.xls"
+        with tempfile.NamedTemporaryFile(suffix=".xls") as tmp:
+            r = subprocess.run(["curl", "-sL", "-m", "180", "-A", NAVEGADOR, "-o", tmp.name, "-w", "%{http_code}", url],
+                               capture_output=True, text=True)
+            if r.stdout != "200":
+                if ano == HOJE.year and HOJE.month == 1:      # a planilha do ano novo pode ainda não existir
+                    continue
+                raise RuntimeError(f"Tesouro: planilha de {ano} não baixou (HTTP {r.stdout})")
+            livro = xlrd.open_workbook(tmp.name)
+        for aba in livro.sheets():
+            venc = data_br(str(aba.cell_value(0, 1)))
+            for i in range(2, aba.nrows):
+                dia, compra, venda = aba.row_values(i)[:3]
+                if isinstance(dia, str) and len(dia) == 10 and compra not in ("", None):
+                    linhas.append([data_br(dia), venc, r4(100 * compra), r4(100 * venda) if venda not in ("", None) else ""])
     gravar("ntnb_tesouro", ["data", "vencimento", "taxa_compra", "taxa_venda"], sorted(linhas))
 
 
