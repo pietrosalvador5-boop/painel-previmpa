@@ -1,6 +1,6 @@
 # Painel de Conjuntura PREVIMPA
 
-Painel de conjuntura econômica e de mercado para o Comitê de Investimentos da PREVIMPA (RPPS do Município de
+Painel de conjuntura econômica e de mercado para a PREVIMPA (RPPS do Município de
 Porto Alegre). Trabalho da disciplina Alocação de Ativos Financeiros, PUCRS, prof. Bruno Breyer Caldas.
 Grupo: Arthur Muller, Pietro Weirich Salvador e Rafael Toni dos Santos.
 
