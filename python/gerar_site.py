@@ -17,7 +17,7 @@ PASTA = Path(__file__).resolve().parent.parent
 DADOS, PAGINA = PASTA / "dados", PASTA / "pagina"
 SAIDA = PASTA / "offline" / "Painel_PREVIMPA.html"
 DATASETS = ["precos", "meta", "focus_anual", "focus_selic", "focus_ipca_mensal", "focus_12m", "copom",
-            "juros", "bolsa", "titulos", "ettj", "ima", "ntnb_tesouro"]
+            "juros", "bolsa", "titulos", "ettj", "ima", "ntnb_bcb"]
 
 
 def main():

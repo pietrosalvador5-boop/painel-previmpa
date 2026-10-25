@@ -742,15 +742,15 @@ function ntnbAba() {
     M.map(m => ({ cel: [fmtMes(m.mes), fmt(m.ipca, 2), m.real ? "IBGE" : "Focus (mediana)", fmt(m.mensal, 2), fmt(m.acum, 2)] })));
 }
 
-// histórico das NTN-B: Tesouro Direto (taxa de venda) até o primeiro dia guardado da ANBIMA; ANBIMA depois
+// histórico das NTN-B: taxa dos negócios do mercado secundário (BCB/Demab) até o primeiro dia guardado da ANBIMA; ANBIMA depois
 function ntnbHistorico() {
-  const TD = rows("ntnb_tesouro");
+  const TD = rows("ntnb_bcb").filter(r => +r.quantidade >= 1000);   // dias com negócio muito pequeno distorcem a taxa
   const hist = a => {
     const anb = TIT.filter(r => r.titulo === "NTN-B" && r.vencimento.startsWith(a)).map(r => ({ x: pd(r.data), y: +r.taxa_indicativa, d: r.data }));
     const ini = anb.length ? anb.map(p => p.d).sort()[0] : "9999";
-    const td = TD.filter(r => r.vencimento.startsWith(a) && r.data < ini && r.taxa_venda !== "").map(r => ({ x: pd(r.data), y: +r.taxa_venda, d: r.data }));
+    const td = TD.filter(r => r.vencimento.startsWith(a) && r.data < ini).map(r => ({ x: pd(r.data), y: +r.taxa, d: r.data }));
     const s = td.concat(anb).sort((x, y) => x.x - y.x), out = [];
-    // intervalo sem dado (mais de 10 dias entre o Tesouro e a ANBIMA) vira lacuna, não uma reta
+    // intervalo sem negócio por mais de 10 dias vira lacuna, não uma reta
     s.forEach((p, i) => { if (i && p.x - s[i - 1].x > 10 * 864e5) out.push({ x: new Date(+s[i - 1].x + 864e5), y: null }); out.push(p); });
     return out;
   };
@@ -773,10 +773,9 @@ function ntnbHistorico() {
   opcoes.forEach(([n]) => { const b = el("button", { type: "button", "data-v": n }, n); b.onclick = () => { escolha = n; try { localStorage.setItem("previmpa-ntnb", n); } catch (e) {} desenha(); }; sel.append(b); });
   desenha();
   $("desc-ntnb-hist").textContent = tdIni
-    ? `Taxa (% a.a. acima do IPCA), por dia. Até ${fmtDia(pd(anbIni))}: taxa de venda do Tesouro Direto; depois, taxa indicativa ANBIMA.`
+    ? `Taxa (% a.a. acima do IPCA), por dia. Até ${fmtDia(pd(anbIni))}: taxa implícita no PU médio dos negócios do mercado secundário; depois, taxa indicativa ANBIMA.`
     : `Taxa indicativa ANBIMA (% a.a. acima do IPCA), por dia, desde ${fmtDia(pd(anbIni))}.`;
-  const tdFim = TD.map(r => r.data).sort().pop();
-  $("fonte-ntnb-hist").textContent = tdIni ? `Fontes: Tesouro Nacional, histórico de preços e taxas do Tesouro Direto (Tesouro IPCA+ com Juros Semestrais, disponível até ${fmtDia(pd(tdFim))}), e ANBIMA. A lacuna é o período ainda sem dado em nenhuma das duas.` : "Fonte: ANBIMA.";
+  $("fonte-ntnb-hist").textContent = tdIni ? "Fontes: BCB/Demab, negócios com títulos públicos federais (taxa calculada pelo grupo a partir do PU médio e do VNA), e ANBIMA." : "Fonte: ANBIMA.";
 }
 
 /* ---------- MERCADOS ---------- */

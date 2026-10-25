@@ -9,11 +9,12 @@ ponto decimal, datas ISO):
   focus_selic.csv   Focus da Selic por reunião do Copom (pesquisa mais recente e a de 4 semanas antes)
   focus_12m.csv     Focus da inflação 12 meses à frente (IPCA e IGP-M, suavizada)
   copom.csv         probabilidades das opções de Copom da B3, próximas reuniões, últimos 30 pregões
-  juros.csv         meta Selic, CDI e dólar PTAX, diários, desde 2024
+  juros.csv         meta Selic e CDI (desde 2024) e dólar PTAX (desde 2020), diários
   bolsa.csv         Ibovespa e IFIX (B3) e S&P 500 (FRED), fechamentos diários, desde 2024
   titulos.csv       taxas indicativas ANBIMA de LTN, NTN-F e NTN-B (acumulado: a ANBIMA só publica 5 dias)
   ettj.csv          curva de juros ANBIMA (ETTJ) prefixada, real (IPCA) e inflação implícita (acumulado)
   ima.csv           quadro-resumo dos índices IMA da ANBIMA (acumulado)
+  ntnb_bcb.csv      taxas das NTN-B desde 2018, calculadas dos negócios do mercado secundário (BCB/Demab)
 
 Os arquivos "acumulados" guardam tudo o que já foi baixado: cada execução lê o CSV anterior, junta os
 dias novos e grava de novo. Por isso o robô do GitHub também publica a pasta dados/.
@@ -338,38 +339,95 @@ def ima():
              novas, chave=(0, 1))
 
 
-def tesouro():
-    """Histórico das NTN-B pelo Tesouro Direto (Tesouro IPCA+ com Juros Semestrais), desde 2018.
+def pascoa(a):
+    b, c, d = a % 19, a // 100, a % 100
+    h = (19 * b + c - c // 4 - (8 * c + 13) // 25 + 15) % 30
+    l = (32 + 2 * (c % 4) + 2 * (d // 4) - h - d % 4) % 7
+    m = (b + 11 * h + 22 * l) // 451
+    return date(a, (h + l - 7 * m + 114) // 31, (h + l - 7 * m + 114) % 31 + 1)
 
-    A ANBIMA só publica os últimos 5 dias úteis. O Tesouro publica uma planilha .xls por ano com as taxas
-    diárias de cada NTN-B ofertada (uma aba por vencimento). Guarda a taxa de compra e a de venda; o painel
-    usa a de venda, mais próxima da taxa indicativa da ANBIMA. (O CSV do Tesouro Transparente tem a mesma
-    série, mas o site bloqueia com HTTP 429 quem baixa com frequência.) A planilha do ano corrente às vezes
-    fica algumas semanas atrás.
+
+def calendario_du():
+    """Número de dias úteis acumulados por data (feriados nacionais, como no calendário da ANBIMA)."""
+    feriados = set()
+    for a in range(2015, 2071):
+        p = pascoa(a)
+        feriados |= {date(a, 1, 1), p - timedelta(48), p - timedelta(47), p - timedelta(2), date(a, 4, 21),
+                     date(a, 5, 1), p + timedelta(60), date(a, 9, 7), date(a, 10, 12), date(a, 11, 2),
+                     date(a, 11, 15), date(a, 12, 25)} | ({date(a, 11, 20)} if a >= 2024 else set())
+    idx, n, d = {}, 0, date(2015, 1, 1)
+    while d.year < 2071:
+        idx[d] = n
+        if d.weekday() < 5 and d not in feriados:
+            n += 1
+        d += timedelta(1)
+    return idx
+
+
+def taxa_ntnb(du, dia, venc, cotacao):
+    """Taxa real (% a.a.) que iguala a cotação (PU / VNA) ao fluxo da NTN-B: cupom de 6% a.a. pago
+    semestralmente e principal no vencimento, descontados por (1 + taxa)^(dias úteis / 252)."""
+    fluxos, d = [], venc
+    while d > dia:
+        fluxos.append(d)
+        d = date(d.year - 1, d.month + 6, 15) if d.month <= 6 else date(d.year, d.month - 6, 15)
+    cupom = 1.06 ** 0.5 - 1
+    prazos = [(du[f] - du[dia]) / 252 for f in fluxos]
+    lo, hi = -0.05, 0.40
+    for _ in range(60):                       # bisseção: o preço cai quando a taxa sobe
+        y = (lo + hi) / 2
+        v = sum((cupom + (k == 0)) / (1 + y) ** t for k, t in enumerate(prazos))
+        lo, hi = (y, hi) if v > cotacao else (lo, y)
+    return 100 * (lo + hi) / 2
+
+
+def ntnb_bcb():
+    """Histórico das NTN-B desde 2018 pelos negócios do mercado secundário (BCB/Demab, NegE).
+
+    A ANBIMA só publica os últimos 5 dias úteis. O Banco Central publica, por mês, os negócios definitivos
+    com títulos federais registrados no Selic: PU médio do dia e valor nominal atualizado (VALOR PAR) de cada
+    título. A taxa sai da fórmula da NTN-B com a cotação PU médio / VNA. Usa só o código 760199 (NTN-B com
+    cupom; o 760198 do arquivo tem cotação de ~11% do VNA e não é o mesmo papel) e descarta o dia em que o PU
+    mínimo e o máximo ficam mais de 3% distantes (negócios fora de mercado contaminam a média, como na
+    NTN-B 2060 em 17/04/2026). Difere da taxa indicativa da ANBIMA em poucos centésimos,
+    porque é a média dos negócios do dia e não a taxa de fechamento. Na primeira vez baixa desde 2018;
+    depois só os dois últimos meses.
     """
-    import tempfile
-    import xlrd
-    linhas = []
-    for ano in range(2018, HOJE.year + 1):
-        url = f"https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/sistd/{ano}/NTN-B_{ano}.xls"
-        with tempfile.NamedTemporaryFile(suffix=".xls") as tmp:
-            r = subprocess.run(["curl", "-sL", "-m", "180", "-A", NAVEGADOR, "-o", tmp.name, "-w", "%{http_code}", url],
-                               capture_output=True, text=True)
-            if r.stdout != "200":
-                if ano == HOJE.year and HOJE.month == 1:      # a planilha do ano novo pode ainda não existir
+    import io
+    import zipfile
+    du = calendario_du()
+    ja = ler("ntnb_bcb")
+    mes = date(2018, 1, 1) if not ja else date(HOJE.year, HOJE.month, 1) - timedelta(days=32)
+    mes = date(mes.year, mes.month, 1)
+    novas = []
+    while mes <= HOJE:
+        url = f"https://www4.bcb.gov.br/pom/demab/negociacoes/download/NegE{mes:%Y%m}.ZIP"
+        r = subprocess.run(["curl", "-sL", "-m", "120", "-A", NAVEGADOR, "-w", "\n%{http_code}", url], capture_output=True)
+        corpo, _, cod = r.stdout.rpartition(b"\n")
+        if cod == b"200" and corpo[:2] == b"PK":
+            z = zipfile.ZipFile(io.BytesIO(corpo))
+            texto = z.read(z.namelist()[0]).decode("latin-1")
+            melhor = {}
+            for l in csv.DictReader(io.StringIO(texto), delimiter=";"):
+                if l["SIGLA"] != "NTN-B" or l["CODIGO"] != "760199" or not l["PU MED"] or not l["VALOR PAR"]:
                     continue
-                raise RuntimeError(f"Tesouro: planilha de {ano} não baixou (HTTP {r.stdout})")
-            livro = xlrd.open_workbook(tmp.name)
-        for aba in livro.sheets():
-            venc = data_br(str(aba.cell_value(0, 1)))
-            for i in range(2, aba.nrows):
-                dia, compra, venda = aba.row_values(i)[:3]
-                if isinstance(dia, str) and len(dia) == 10 and compra not in ("", None):
-                    linhas.append([data_br(dia), venc, r4(100 * compra), r4(100 * venda) if venda not in ("", None) else ""])
-    gravar("ntnb_tesouro", ["data", "vencimento", "taxa_compra", "taxa_venda"], sorted(linhas))
+                if num_br(l["PU MAX"]) / num_br(l["PU MIN"]) - 1 > 0.03:
+                    continue
+                k = (data_br(l["DATA MOV"]), data_br(l["VENCIMENTO"]))
+                q = num_br(l["QUANT NEGOCIADA"])
+                if k not in melhor or q > melhor[k][0]:
+                    melhor[k] = (q, num_br(l["PU MED"]), num_br(l["VALOR PAR"]))
+            for (d, v), (q, pu, par) in melhor.items():
+                dia, venc = date.fromisoformat(d), date.fromisoformat(v)
+                if venc > dia and par:
+                    novas.append([d, v, r4(taxa_ntnb(du, dia, venc, pu / par)), int(q)])
+        elif mes < date(HOJE.year, HOJE.month, 1):      # o mês corrente pode ainda não ter arquivo
+            raise RuntimeError(f"BCB/Demab: arquivo de {mes:%m/%Y} não baixou (HTTP {cod.decode()})")
+        mes = date(mes.year + (mes.month == 12), mes.month % 12 + 1, 1)
+    acumular("ntnb_bcb", ["data", "vencimento", "taxa", "quantidade"], novas, chave=(0, 1))
 
 
-ETAPAS = (precos, focus, copom, juros, bolsa, titulos, ettj, ima, tesouro)
+ETAPAS = (precos, focus, copom, juros, bolsa, titulos, ettj, ima, ntnb_bcb)
 
 
 def main():
