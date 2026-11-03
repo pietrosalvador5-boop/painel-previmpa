@@ -206,10 +206,15 @@ def focus():
                     for r in x if r["DataReferencia"] in anos and date.fromisoformat(r["Data"]).weekday() == 4)
     gravar("focus_anual", ["indicador", "ano", "data", "mediana", "respondentes"], linhas)
 
-    x = olinda("ExpectativasMercadoSelic", f"Data ge '{(HOJE - timedelta(weeks=6)).isoformat()}' and baseCalculo eq 0")
+    # janelas largas: em semana de feriado o Focus não sai na segunda e o intervalo entre pesquisas vai a 14 dias
+    x = olinda("ExpectativasMercadoSelic", f"Data ge '{(HOJE - timedelta(weeks=12)).isoformat()}' and baseCalculo eq 0")
     sextas = sorted({r["Data"] for r in x if date.fromisoformat(r["Data"]).weekday() == 4})
+    if not sextas:
+        raise RuntimeError("Focus Selic: nenhuma pesquisa de sexta-feira nas últimas 12 semanas")
     ult = sextas[-1]
-    antes = max(d for d in sextas if d <= (date.fromisoformat(ult) - timedelta(weeks=4)).isoformat())
+    limite = (date.fromisoformat(ult) - timedelta(weeks=4)).isoformat()
+    anteriores = [d for d in sextas if d <= limite]
+    antes = max(anteriores) if anteriores else sextas[0]     # sem 4 semanas de folga, usa a mais antiga que existe
     linhas = []
     for r in x:
         if r["Data"] in (ult, antes):
@@ -219,7 +224,9 @@ def focus():
 
     # IPCA mensal esperado: completa a meta atuarial nos meses em que o IPCA ainda não saiu
     x = olinda("ExpectativaMercadoMensais",
-               f"Data ge '{(HOJE - timedelta(days=10)).isoformat()}' and baseCalculo eq 0 and Indicador eq 'IPCA'")
+               f"Data ge '{(HOJE - timedelta(days=45)).isoformat()}' and baseCalculo eq 0 and Indicador eq 'IPCA'")
+    if not x:
+        raise RuntimeError("Focus IPCA mensal: nenhuma pesquisa nos últimos 45 dias")
     ult = max(r["Data"] for r in x)
     linhas = sorted([f"{r['DataReferencia'][3:]}-{r['DataReferencia'][:2]}-01", r["Data"], r4(r["Mediana"])]
                     for r in x if r["Data"] == ult)
