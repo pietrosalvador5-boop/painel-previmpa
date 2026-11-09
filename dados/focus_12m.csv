@@ -1,5 +1,4 @@
 indicador,data,mediana
-IGP-M,2024-11-08,4.2318
 IGP-M,2024-11-22,4.3653
 IGP-M,2024-11-29,4.283
 IGP-M,2024-12-06,4.6342
@@ -99,7 +98,6 @@ IGP-M,2026-10-09,4.5911
 IGP-M,2026-10-16,4.3441
 IGP-M,2026-10-23,4.281
 IGP-M,2026-10-30,4.5914
-IPCA,2024-11-08,4.0888
 IPCA,2024-11-22,4.3591
 IPCA,2024-11-29,4.4082
 IPCA,2024-12-06,4.643
@@ -199,7 +197,6 @@ IPCA,2026-10-09,4.4772
 IPCA,2026-10-16,4.5146
 IPCA,2026-10-23,4.5336
 IPCA,2026-10-30,4.9553
-IPCA Administrados,2024-11-08,2.5762
 IPCA Administrados,2024-11-22,3.0098
 IPCA Administrados,2024-11-29,3.2357
 IPCA Administrados,2024-12-06,3.5611
@@ -299,7 +296,6 @@ IPCA Administrados,2026-10-09,3.9038
 IPCA Administrados,2026-10-16,3.9753
 IPCA Administrados,2026-10-23,4.0996
 IPCA Administrados,2026-10-30,4.5627
-IPCA Alimentação no domicílio,2024-11-08,5.9952
 IPCA Alimentação no domicílio,2024-11-22,6.4864
 IPCA Alimentação no domicílio,2024-11-29,6.3041
 IPCA Alimentação no domicílio,2024-12-06,6.5274
@@ -399,7 +395,6 @@ IPCA Alimentação no domicílio,2026-10-09,6.6188
 IPCA Alimentação no domicílio,2026-10-16,6.6437
 IPCA Alimentação no domicílio,2026-10-23,6.7732
 IPCA Alimentação no domicílio,2026-10-30,7.4151
-IPCA Bens industrializados,2024-11-08,2.9943
 IPCA Bens industrializados,2024-11-22,3.0968
 IPCA Bens industrializados,2024-11-29,3.1243
 IPCA Bens industrializados,2024-12-06,3.4213
@@ -499,7 +494,6 @@ IPCA Bens industrializados,2026-10-09,2.6695
 IPCA Bens industrializados,2026-10-16,2.6701
 IPCA Bens industrializados,2026-10-23,2.6043
 IPCA Bens industrializados,2026-10-30,2.8051
-IPCA Livres,2024-11-08,4.5962
 IPCA Livres,2024-11-22,4.8093
 IPCA Livres,2024-11-29,4.813
 IPCA Livres,2024-12-06,5.0317
@@ -599,7 +593,6 @@ IPCA Livres,2026-10-09,4.6914
 IPCA Livres,2026-10-16,4.6785
 IPCA Livres,2026-10-23,4.803
 IPCA Livres,2026-10-30,4.9811
-IPCA Serviços,2024-11-08,5.0932
 IPCA Serviços,2024-11-22,5.2481
 IPCA Serviços,2024-11-29,5.2567
 IPCA Serviços,2024-12-06,5.4043
