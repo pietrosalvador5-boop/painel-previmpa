@@ -1,21 +1,4 @@
 reuniao,reuniao_nome,data,cenario,prob,contratos_abertos
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 0,25%",0.99,696500
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 0,5%",0.99,693500
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 0,75%",0.99,693500
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,Aumento de 1%,0.99,693500
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 1,25%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 1,5%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Aumento de 1,75%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,Aumento de 2%,0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,Manutenção,13,673016
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 0,25%",53,716250
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 0,5%",28,1145695
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 0,75%",0,455000
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,Queda de 1%,0,493000
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 1,25%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 1,5%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,"Queda de 1,75%",0,0
-2026-12-09,8 e 9 de dezembro de 2026,2026-10-09,Queda de 2%,0,0
 2026-12-09,8 e 9 de dezembro de 2026,2026-10-13,"Aumento de 0,25%",1.9,697500
 2026-12-09,8 e 9 de dezembro de 2026,2026-10-13,"Aumento de 0,5%",1.4,694500
 2026-12-09,8 e 9 de dezembro de 2026,2026-10-13,"Aumento de 0,75%",0.9,694500
@@ -509,15 +492,6 @@ reuniao,reuniao_nome,data,cenario,prob,contratos_abertos
 2026-12-09,8 e 9 de dezembro de 2026,2026-11-24,"Queda de 1,5%",0,0
 2026-12-09,8 e 9 de dezembro de 2026,2026-11-24,"Queda de 1,75%",0,0
 2026-12-09,8 e 9 de dezembro de 2026,2026-11-24,Queda de 2%,0,0
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Aumento de 0,25%",1.75,145500
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Aumento de 0,5%",1.61,144500
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Aumento de 0,75%",0.47,144500
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,Aumento de 1%,0.47,144500
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,Manutenção,11.42,230000
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Queda de 0,25%",30,371400
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Queda de 0,5%",41,381000
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,"Queda de 0,75%",7.5,300001
-2027-01-27,26 e 27 de janeiro de 2027,2026-10-09,Queda de 1%,2.15,300000
 2027-01-27,26 e 27 de janeiro de 2027,2026-10-13,"Aumento de 0,25%",1.94,190500
 2027-01-27,26 e 27 de janeiro de 2027,2026-10-13,"Aumento de 0,5%",1.29,189500
 2027-01-27,26 e 27 de janeiro de 2027,2026-10-13,"Aumento de 0,75%",0.65,189500
